@@ -1,0 +1,21 @@
+.select-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.select-field__label {
+  font-weight: 600;
+}
+
+.select-field__control {
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface-1);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  padding: 6px 10px;
+  max-width: 100%;
+}

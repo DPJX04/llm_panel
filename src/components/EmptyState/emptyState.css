@@ -1,0 +1,20 @@
+.empty-state {
+  border: 1.5px dashed var(--baseline);
+  border-radius: 14px;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--surface-1);
+}
+
+.empty-state__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.empty-state__message {
+  margin: 6px auto 16px;
+  max-width: 52ch;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}

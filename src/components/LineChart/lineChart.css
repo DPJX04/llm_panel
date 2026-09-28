@@ -1,0 +1,141 @@
+.line-chart {
+  margin: 0;
+}
+
+.line-chart__plot {
+  position: relative;
+  outline: none;
+  border-radius: 8px;
+}
+
+.line-chart__plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.line-chart__svg {
+  display: block;
+  width: 100%;
+  max-width: 860px;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.line-chart__grid {
+  stroke: var(--gridline);
+  stroke-width: 1;
+}
+
+.line-chart__baseline {
+  stroke: var(--baseline);
+  stroke-width: 1;
+}
+
+.line-chart__tick {
+  fill: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-chart__axis-title {
+  fill: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.line-chart__line {
+  fill: none;
+  stroke: var(--line-color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.line-chart__dot {
+  fill: var(--line-color);
+  stroke: var(--surface-1);
+  stroke-width: 2;
+}
+
+.line-chart__end-label {
+  fill: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.line-chart__crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.line-chart__hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-legend__key {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.chart-tooltip {
+  position: absolute;
+  top: 8px;
+  z-index: 5;
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--tooltip-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  font-size: 12.5px;
+  pointer-events: none;
+}
+
+.chart-tooltip__heading {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.chart-tooltip__row {
+  display: grid;
+  grid-template-columns: 14px auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.chart-tooltip__key {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.chart-tooltip__value {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.chart-tooltip__name {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
