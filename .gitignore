@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+*.pem
+*.keystore
+
+# build output
+dist/
+
+# local benchmark result drops (load them into the panel, don't commit them)
+results/
+
+# editor / OS noise
+.vscode/
+Thumbs.db
+desktop.ini
