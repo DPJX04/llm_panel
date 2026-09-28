@@ -1,0 +1,14 @@
+.placement {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.placement__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.metric-trend + .data-table {
+  margin-top: 18px;
+}
