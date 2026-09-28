@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Benchmark Panel tests</title>
+  <style>
+    body { font: 13px/1.5 ui-monospace, Consolas, monospace; margin: 24px; }
+    .pass { color: #006300; }
+    .fail { color: #b3261e; }
+  </style>
+</head>
+<body>
+  <pre id="results">Running…</pre>
+
+  <!-- Loads every app module (which also checks the dependency rules), then the tests. -->
+  <script src="../src/platform/loadErrorBanner.js"></script>
+  <script src="../src/platform/layerRules.js"></script>
+  <script src="../src/platform/moduleRegistry.js"></script>
+  <script src="../src/loadOrder.js"></script>
+  <script src="../src/platform/appLoader.js"></script>
+  <script>BenchPanelLoader.loadApp('../', { withTests: true });</script>
+</body>
+</html>
