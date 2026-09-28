@@ -19,7 +19,6 @@ BenchPanel.define('features/modelDetail/RunDetailsTable', [
         : '0') },
       { label: 'Avg input tokens', align: 'right', render: (run) => perRequest(run.totalInputTokens, run.completed) },
       { label: 'Avg output tokens', align: 'right', render: (run) => perRequest(run.totalOutputTokens, run.completed) },
-      { label: 'Peak output tok/s', align: 'right', render: (run) => numberFormat.formatNumber(run.peakOutputTokensPerS, 0) },
       { label: 'Duration', align: 'right', render: (run) => numberFormat.formatDuration(run.durationS) },
       { label: 'Run date', render: (run) => numberFormat.formatRunDate(run.date) },
       { label: 'File', render: (run) => dom.h('span', { className: 'muted', text: run.sourceFile }) },

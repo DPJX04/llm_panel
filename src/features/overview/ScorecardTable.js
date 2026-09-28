@@ -1,37 +1,42 @@
-/* The scorecard as a table: value and rank per criterion, then the average rank that orders the rows. */
+/* The scorecard as a table: each criterion's value with its percentage of the best, then the overall score. */
 BenchPanel.define('features/overview/ScorecardTable', [
-  'components/dom', 'components/DataTable/DataTable', 'components/ModelTag/ModelTag',
-  'constants/metricCatalog', 'utils/numberFormat',
-], (dom, dataTable, modelTag, metricCatalog, numberFormat) => {
+  'components/dom', 'components/DataTable/DataTable', 'components/ModelTag/ModelTag', 'components/RankLabel/RankLabel',
+  'constants/metricCatalog', 'constants/rankingRules', 'utils/numberFormat',
+], (dom, dataTable, modelTag, rankLabel, metricCatalog, rankingRules, numberFormat) => {
   'use strict';
 
-  function RankedValue(cell, metric) {
-    return dom.h('span', { className: 'ranked-value' },
-      numberFormat.formatMetric(cell.value, metric),
-      cell.rank !== null ? dom.h('span', { className: `rank-badge${cell.rank === 1 ? ' rank-badge--first' : ''}`, text: `#${cell.rank}` }) : null);
+  function percent(score) {
+    return `${numberFormat.formatNumber(score * 100, 0)}%`;
   }
 
-  /** @param {{ scorecard: ReturnType<typeof import('./scorecard').buildScorecard> }} props */
+  function ScoredValue(cell, metric) {
+    return dom.h('span', { className: 'ranked-value' },
+      numberFormat.formatMetric(cell.value, metric),
+      cell.score !== null
+        ? dom.h('span', { className: `rank-badge${cell.score >= 0.9995 ? ' rank-badge--first' : ''}`, text: percent(cell.score) })
+        : null);
+  }
+
+  /** @param {{ scorecard: { criteria: Object[], rows: Object[] } }} props */
   function ScorecardTable(props) {
     const { criteria, rows } = props.scorecard;
     const columns = [
-      { label: 'Overall', align: 'right', render: (row) => (row.overallRank === null ? numberFormat.MISSING : `#${row.overallRank}`) },
+      { label: 'Overall', render: (row) => rankLabel.RankLabel({ rank: row.rank, tied: row.tied }) },
       { label: 'Model', render: (row) => modelTag.ModelTag(row.model) },
       ...criteria.map((criterion, index) => {
         const metric = metricCatalog.METRICS[criterion.metricKey];
         return {
           label: criterion.label,
-          title: `${metric.title}. ${metric.better === metricCatalog.HIGHER ? 'Higher' : 'Lower'} is better.`,
+          title: `${metric.title}. ${metric.better === metricCatalog.HIGHER ? 'Higher' : 'Lower'} is better. The percentage is this value relative to the best model (100% = best).`,
           align: 'right',
-          value: (row) => row.cells[index].value,
-          better: metric.better,
-          render: (row) => RankedValue(row.cells[index], metric),
+          render: (row) => ScoredValue(row.cells[index], metric),
         };
       }),
-      { label: 'Avg rank', align: 'right', value: (row) => row.averageRank, better: metricCatalog.LOWER,
-        render: (row) => numberFormat.formatNumber(row.averageRank, 1) },
+      { label: 'Score', title: 'Average of the percentages in this row', align: 'right',
+        value: (row) => row.score, better: metricCatalog.HIGHER, tieTolerance: rankingRules.TIE_TOLERANCE,
+        render: (row) => (row.score === null ? numberFormat.MISSING : numberFormat.formatNumber(row.score * 100, 1)) },
     ];
-    return dataTable.DataTable({ columns, rows, caption: 'Overall scorecard', rowClass: (row) => (row.overallRank === 1 ? 'is-leader' : '') });
+    return dataTable.DataTable({ columns, rows, caption: 'Overall scorecard', rowClass: (row) => (row.rank === 1 ? 'is-leader' : '') });
   }
 
   return { ScorecardTable };

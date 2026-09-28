@@ -1,12 +1,12 @@
 /* The Overview tab: the one-page story for a reader who has two minutes. */
 BenchPanel.define('features/overview/OverviewView', [
   'components/dom', 'components/Section/Section', 'components/StatTile/StatTile', 'components/EmptyState/EmptyState',
-  'components/BarList/BarList', 'components/MetricTrendChart/MetricTrendChart',
-  'store/workspaceStore', 'constants/metricCatalog', 'utils/keyLevels', 'utils/runCollection', 'utils/metricValues',
+  'components/BarList/BarList', 'components/MetricTrendChart/MetricTrendChart', 'components/SettingsCheck/SettingsCheck',
+  'store/workspaceStore', 'constants/metricCatalog', 'constants/rankingRules', 'utils/keyLevels', 'utils/runCollection', 'utils/metricValues',
   'utils/ranking', 'utils/numberFormat',
   'features/overview/highlights', 'features/overview/scorecard', 'features/overview/ScorecardTable', 'features/overview/ModelOverviewTable',
-], (dom, section, statTile, emptyState, barList, metricTrendChart, workspaceStore, metricCatalog, keyLevels, runCollection,
-  metricValues, ranking, numberFormat, highlights, scorecard, scorecardTable, modelOverviewTable) => {
+], (dom, section, statTile, emptyState, barList, metricTrendChart, settingsCheck, workspaceStore, metricCatalog, rankingRules, keyLevels,
+  runCollection, metricValues, ranking, numberFormat, highlights, scorecard, scorecardTable, modelOverviewTable) => {
   'use strict';
 
   function summaryLine(models, runs) {
@@ -50,12 +50,13 @@ BenchPanel.define('features/overview/OverviewView', [
         dom.h('div', { className: 'page-intro' },
           dom.h('h1', { className: 'page-intro__title', text: 'Benchmark summary' }),
           dom.h('p', { className: 'page-intro__meta', text: summaryLine(models, runs) })),
+        settingsCheck.SettingsCheck({ runs, models }),
         dom.h('div', { className: 'stat-tiles' }, highlights.buildHighlights(models, runs, levels).map(statTile.StatTile)),
         section.Section({
           title: 'Overall scorecard',
-          description: `Each model is ranked on throughput under load, single-user speed, and latency. #1 is best in that column.${levelNote}`,
-          footnote: `Overall = average of the ranks in this table, with equal weight. Low load is concurrency ${low}; peak is concurrency ${peak}, the highest level every model was tested at.`,
-        }, scorecardTable.ScorecardTable({ scorecard: scorecard.buildScorecard(models, runs, levels) })),
+          description: `Each model is scored on throughput under load, single-user speed, and latency. The percentage is the model's value relative to the best model (100% = best).${levelNote}`,
+          footnote: `Score = average of the percentages, with equal weight. Models whose scores are within ${rankingRules.TIE_TOLERANCE_LABEL} share a rank, because single runs vary that much. Low load is concurrency ${low}; peak is concurrency ${peak}, the highest level every model was tested at.`,
+        },scorecardTable.ScorecardTable({ scorecard: scorecard.buildScorecard(models, runs, levels) })),
         dom.h('div', { className: 'two-up' },
           section.Section({ title: `Capacity at concurrency ${peak}`, description: 'Output tokens per second across all users. Higher is better.' },
             RankedBars(models, runs, 'outputThroughput', levels.peak)),

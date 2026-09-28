@@ -17,6 +17,7 @@
 }
 
 .bar-list__track {
+  --bar-label-room: 96px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -26,7 +27,7 @@
 .bar-list__bar {
   height: 20px;
   min-width: 2px;
-  max-width: calc(100% - 96px);
+  flex: none;
   border-radius: 0 4px 4px 0;
   background: var(--bar-color);
   transition: filter 120ms ease;

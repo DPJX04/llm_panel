@@ -25,6 +25,14 @@ BenchPanel.define('utils/numberFormat', [], () => {
     }
   }
 
+  /** A number with its unit. "%" and "×" sit tight ("85.9%", "2.1×"); other units get a space ("21.3 GB"). */
+  function formatWithUnit(value, decimals, unit) {
+    if (!isNumber(value)) return MISSING;
+    const number = formatNumber(value, decimals);
+    if (!unit) return number;
+    return unit === '%' || unit === '×' ? `${number}${unit}` : `${number} ${unit}`;
+  }
+
   /** Short axis label: whole numbers stay whole, fractional steps keep the digits they need. */
   function formatTick(value, metric) {
     const scaled = metric.format === 'seconds' ? value / 1000 : metric.format === 'percent' ? value * 100 : value;
@@ -61,5 +69,5 @@ BenchPanel.define('utils/numberFormat', [], () => {
     return match ? `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}` : date || MISSING;
   }
 
-  return { MISSING, isNumber, formatNumber, formatMetric, formatTick, formatRatioDelta, formatConcurrency, formatDuration, formatRunDate };
+  return { MISSING, isNumber, formatNumber, formatWithUnit, formatMetric, formatTick, formatRatioDelta, formatConcurrency, formatDuration, formatRunDate };
 });

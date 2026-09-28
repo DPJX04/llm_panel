@@ -1,4 +1,4 @@
-/* Per-request generation speed (1000 ÷ TPOT) at each level, and how much of it survives as load grows. */
+/* Per-request generation speed (1000 ÷ TPOT) at each level, next to total throughput and how well it scaled. */
 BenchPanel.define('features/modelDetail/TokenSpeedTable', [
   'components/DataTable/DataTable', 'components/DataTable/metricColumn', 'utils/numberFormat',
 ], (dataTable, metricColumn, numberFormat) => {
@@ -12,7 +12,6 @@ BenchPanel.define('features/modelDetail/TokenSpeedTable', [
       { label: 'Concurrency', align: 'right', render: (run) => numberFormat.formatConcurrency(run.concurrency) },
       metricColumn.metricColumn('meanTpotMs', { ...access, label: 'TPOT' }),
       metricColumn.metricColumn('tokensPerRequest', { ...access, label: 'Approx tok/s per request' }),
-      metricColumn.metricColumn('speedRetention', { ...access, label: `Speed kept vs C${numberFormat.formatConcurrency(baseline.concurrency)}` }),
       metricColumn.metricColumn('outputThroughput', { ...access, label: 'Output TPS (all requests)' }),
       metricColumn.metricColumn('scalingEfficiency', access),
     ];

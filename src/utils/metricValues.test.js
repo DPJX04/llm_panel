@@ -35,12 +35,6 @@
     assert.equal(metricValues.getMetricValue(loaded, 'scalingEfficiency'), null, 'no baseline');
   });
 
-  test('speed retention is per-request speed relative to the baseline', () => {
-    const baseline = run({ max_concurrency: 1, mean_tpot_ms: 25 });
-    const loaded = run({ max_concurrency: 16, mean_tpot_ms: 50 });
-    assert.near(metricValues.getMetricValue(loaded, 'speedRetention', baseline), 0.5);
-  });
-
   test('an unknown metric key is an error, not a silent blank', () => {
     assert.throws(() => metricValues.getMetricValue(run(), 'nope'), /Unknown metric/);
   });

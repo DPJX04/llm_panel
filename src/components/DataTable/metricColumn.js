@@ -1,7 +1,7 @@
 /* Builds a DataTable column for one catalogued metric, so every table formats and highlights it the same way. */
 BenchPanel.define('components/DataTable/metricColumn', [
-  'constants/metricCatalog', 'utils/metricValues', 'utils/numberFormat',
-], (metricCatalog, metricValues, numberFormat) => {
+  'constants/metricCatalog', 'constants/rankingRules', 'utils/metricValues', 'utils/numberFormat',
+], (metricCatalog, rankingRules, metricValues, numberFormat) => {
   'use strict';
 
   /**
@@ -18,6 +18,7 @@ BenchPanel.define('components/DataTable/metricColumn', [
       align: 'right',
       value,
       better: access.highlight === false ? undefined : metric.better,
+      tieTolerance: metric.exact ? 0 : rankingRules.TIE_TOLERANCE,
       markWorst: Boolean(access.markWorst),
       render: (row) => numberFormat.formatMetric(value(row), metric),
     };

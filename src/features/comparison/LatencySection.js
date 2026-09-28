@@ -14,7 +14,8 @@ BenchPanel.define('features/comparison/LatencySection', [
     if (!entry || entry.value === null) return numberFormat.MISSING;
     return dom.h('span', { className: 'placement' },
       modelTag.ModelTag(entry.model),
-      dom.h('span', { className: 'placement__value', text: numberFormat.formatMetric(entry.value, metric) }));
+      dom.h('span', { className: 'placement__value', text: numberFormat.formatMetric(entry.value, metric) }),
+      entry.tied && entry.rank === 1 ? dom.h('span', { className: 'rank-label__tie', text: 'tie', title: 'Within normal run-to-run noise of the best' }) : null);
   }
 
   function LeaderTable(models, runs, metricKey) {

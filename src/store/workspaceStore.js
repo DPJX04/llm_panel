@@ -84,10 +84,12 @@ BenchPanel.define('store/workspaceStore', [
     commit({ runs: [], profiles: {}, modelOrder: [] });
   }
 
-  /** @param {string} modelKey  @param {Partial<import('../types/benchmarkRun').ModelProfile>} patch */
-  function updateProfile(modelKey, patch) {
-    const current = state.profiles[modelKey] || benchmarkRun.createModelProfile();
-    commit({ ...state, profiles: { ...state.profiles, [modelKey]: { ...current, ...patch } } });
+  /**
+   * Replaces a model's profile. The caller passes a profile that went through the validation gate.
+   * @param {string} modelKey  @param {import('../types/benchmarkRun').ModelProfile} profile
+   */
+  function setProfile(modelKey, profile) {
+    commit({ ...state, profiles: { ...state.profiles, [modelKey]: profile } });
   }
 
   /**
@@ -111,5 +113,5 @@ BenchPanel.define('store/workspaceStore', [
     });
   }
 
-  return { init, subscribe, getState, getStorageError, importResults, removeRun, removeModel, clearAll, updateProfile, getModels };
+  return { init, subscribe, getState, getStorageError, importResults, removeRun, removeModel, clearAll, setProfile, getModels };
 });

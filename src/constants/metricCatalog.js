@@ -29,18 +29,20 @@ BenchPanel.define('constants/metricCatalog', [], () => {
       description: 'Total time from sending a request to receiving the full answer.' },
     p95E2eMs: { label: 'P95 E2E', title: 'P95 end-to-end latency', better: LOWER, format: 'seconds', decimals: 2,
       description: '95% of requests finished within this time.' },
-    successRate: { label: 'Success', title: 'Success rate', better: HIGHER, format: 'percent', decimals: 1,
+    // exact: a failed request is never noise, so any gap in success rate counts.
+    successRate: { label: 'Success', title: 'Success rate', better: HIGHER, format: 'percent', decimals: 1, exact: true,
       description: 'Completed requests out of requests sent.' },
     scalingEfficiency: { label: 'Scaling eff.', title: 'Throughput scaling efficiency', better: HIGHER, format: 'percent', decimals: 0,
       description: 'Output TPS at this level ÷ (concurrency × Output TPS at the lowest level). 100% is perfect scaling.' },
-    speedRetention: { label: 'Speed kept', title: 'Per-request speed retained', better: HIGHER, format: 'percent', decimals: 0,
-      description: 'Tok/s per request at this level ÷ tok/s per request at the lowest level.' },
   });
 
-  /** Metrics a user can pick as the focus of the comparison view, in menu order. */
+  /**
+   * Metrics a user can pick as the focus of the comparison view, in menu order.
+   * Req/s, Total TPS and TPOT are left out: with a fixed output length they rank models
+   * exactly like Output TPS and tok/s per request. They stay in Model detail.
+   */
   const FOCUS_METRIC_KEYS = Object.freeze([
-    'outputThroughput', 'tokensPerRequest', 'requestThroughput', 'totalTokenThroughput',
-    'meanTtftMs', 'p95TtftMs', 'meanTpotMs', 'meanE2eMs', 'p95E2eMs',
+    'outputThroughput', 'tokensPerRequest', 'meanTtftMs', 'p95TtftMs', 'meanE2eMs', 'p95E2eMs',
   ]);
 
   return { HIGHER, LOWER, METRICS, FOCUS_METRIC_KEYS };

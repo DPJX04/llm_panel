@@ -1,0 +1,67 @@
+.stacked-bars__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stacked-bars__row {
+  display: grid;
+  grid-template-columns: minmax(90px, 180px) 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.stacked-bars__label {
+  font-size: 13px;
+  min-width: 0;
+}
+
+.stacked-bars__track {
+  --bar-label-room: 128px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stacked-bars__bar {
+  display: flex;
+  gap: 2px;
+  height: 20px;
+  flex: none;
+}
+
+.stacked-bars__part {
+  min-width: 2px;
+  cursor: help;
+}
+
+.stacked-bars__part:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.stacked-bars__part:hover {
+  filter: brightness(1.1);
+}
+
+.stacked-bars__value {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stacked-bars__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+@media (max-width: 520px) {
+  .stacked-bars__row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

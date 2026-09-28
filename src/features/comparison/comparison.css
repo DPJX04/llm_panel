@@ -12,3 +12,38 @@
 .metric-trend + .data-table {
   margin-top: 18px;
 }
+
+.memory-section__table {
+  margin-top: 18px;
+}
+
+.section-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.section-toggles__legend {
+  float: left;
+  padding: 0;
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+.section-toggles__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.section-toggles__item input {
+  accent-color: var(--accent);
+  margin: 0;
+}

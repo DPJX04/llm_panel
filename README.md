@@ -14,13 +14,17 @@ It runs in any browser with nothing to install: **double-click `index.html`**.
    (`--append-result`), objects pasted back to back, a wrapper like `{"results": [...]}`, or an object keyed by
    concurrency like `{"c1": {...}, "c16": {...}}`. The file extension can be `.json`, `.jsonl`, `.md` or `.txt`.
    A newer run for the same model and level replaces the older one.
-3. In **Data → Models**, optionally give each model a short name and add model size, VRAM, GPU utilisation and power
-   (from `nvidia-smi` during the run). The result files do not record hardware, and these numbers unlock the GPU efficiency table.
-4. Present from **Overview**. Use **Compare models** and **Model detail** for questions.
+3. Optionally, also drop each model's `vllm serve` log (`.log`). The panel reads the model weights, KV cache memory and
+   size, max model length, max concurrency and GPU count, and fills them in for the model the log names.
+4. In **Data → Hardware and memory**, pick a model and add its GPU usage: paste your GPU usage table
+   (`| Metric | GPU 1 | GPU 2 |` rows such as "Average GPU utilization", "Average memory used", "Average power"),
+   or type it in the grid. Use **+ Add GPU** for tensor-parallel models. **Fill from vLLM log…** does step 3 for one model.
+5. Present from **Overview**. Use **Compare models** and **Model detail** for questions. In Compare, the **Show**
+   check boxes hide or show each section (the choice is remembered).
 
 Everything is saved in this browser, so a refresh keeps your data.
 **Export workspace** saves runs and model details in one file. Load that file on another PC to see the same panel.
-**Export CSV** gives every run with every metric, for Excel. **Print / PDF** prints the tab that is open.
+**Export CSV** gives every run with every metric and the model's hardware details, for Excel. **Print / PDF** prints the tab that is open.
 
 To share the panel itself as one file, run `bash scripts/build-single-file.sh`. It writes `dist/benchmark-panel.html`.
 
@@ -28,29 +32,37 @@ To share the panel itself as one file, run `bash scripts/build-single-file.sh`. 
 
 | View | Contents |
 |---|---|
-| Overview | Headline winners, an overall scorecard (average rank across five criteria), capacity and single-user speed bars, throughput vs per-user speed charts, model line-up |
-| Compare models | Focus-metric chart and grid, a ranking table per concurrency level, latency best / second-best / main concern, scaling efficiency, GPU efficiency |
-| Model detail | One model: summary per level, token generation speed, latency percentiles, run details |
-| Data | Load files, name models, enter hardware, export, remove runs |
+| Overview | Headline winners, an overall scorecard (percentage of the best on five criteria), capacity and single-user speed bars, throughput vs per-user speed charts, model line-up, and a warning if runs were measured differently |
+| Compare models | Focus-metric chart and grid, a ranking table per concurrency level, latency best / second-best / main concern, scaling efficiency, GPU usage, memory breakdown and efficiency, KV cache |
+| Model detail | One model: summary per level (incl. Req/s, Total TPS, TPOT), token generation speed, latency percentiles, run details |
+| Data | Load files and logs, name models, enter hardware and memory, export, remove runs |
 
 ## Metrics
 
 | Metric | Meaning | Better |
 |---|---|---|
-| Req/s | Completed requests per second | higher |
 | Output TPS | Generated tokens per second across all users | higher |
-| Total TPS | Prompt plus generated tokens per second | higher |
 | Tok/s per request | What one user sees, **≈ 1000 ÷ mean TPOT (ms)** | higher |
-| TTFT | Time to first token | lower |
-| TPOT | Time per output token after the first | lower |
-| E2E | End-to-end time for the full answer | lower |
+| TTFT | Time to first token (mean and P95) | lower |
+| E2E | End-to-end time for the full answer (mean and P95) | lower |
+| Success | Completed requests ÷ requests sent | higher |
 | Scaling efficiency | Output TPS ÷ (concurrency × Output TPS at the lowest level) | higher |
-| Speed kept | Tok/s per request ÷ the same at the lowest level | higher |
-| TPS per GB | Output TPS at peak ÷ VRAM used | higher |
+| Req/s, Total TPS, TPOT | Model detail only: with a fixed output length they rank models exactly like Output TPS and tok/s per request | |
+| TPS per GB | Output TPS at peak ÷ GPU memory used | higher |
 | Tokens per joule | Output TPS at peak ÷ GPU power (W) | higher |
+| KV cache size, tokens per GB | Tokens the KV cache holds, and per GB of KV cache memory | higher |
+| Max concurrency | Full-length requests that fit in the KV cache at once (from the vLLM log) | higher |
 
 "Peak" is the highest concurrency level every model was tested at. "Low" is the lowest one.
 
+**Ties.** Each configuration is run once, and vLLM runs vary by about 1–3%. Values within 3% of each other are
+shown as ties: they share a rank and are all marked best. Success rate is compared exactly.
+
+**Scorecard.** On each criterion a model scores its value as a percentage of the best model's (100% = best);
+the overall score is the plain average. A model 17× slower on one criterion loses far more than one 10% slower.
+
+**Memory used** is not ranked: vLLM reserves a fixed share of GPU memory up front (`--gpu-memory-utilization`),
+so it mostly reflects that setting. The split between weights and KV cache is what differs between models.
 ## Project layout
 
 Plain JavaScript, no build step. Browsers block ES modules on `file://` pages, so each file registers itself with a small

@@ -118,12 +118,43 @@ BenchPanel.define('services/resultParser', [
     }
   }
 
+  function percent(value) {
+    const n = nonNegative(value);
+    return n !== null && n <= 100 ? n : null;
+  }
+
+  function toGpuUsage(raw) {
+    const gpu = benchmarkRun.createGpuUsage();
+    if (!isPlainObject(raw)) return gpu;
+    const temperature = num(raw.temperatureC);
+    gpu.gpuUtilPct = percent(raw.gpuUtilPct);
+    gpu.memoryUsedGb = nonNegative(raw.memoryUsedGb);
+    gpu.memoryUtilPct = percent(raw.memoryUtilPct);
+    gpu.powerW = nonNegative(raw.powerW);
+    gpu.temperatureC = temperature !== null && temperature > -40 && temperature < 150 ? temperature : null;
+    return gpu;
+  }
+
+  function toKvCache(raw) {
+    const kvCache = benchmarkRun.createKvCacheStats();
+    if (!isPlainObject(raw)) return kvCache;
+    benchmarkRun.KV_CACHE_FIELDS.forEach((field) => { kvCache[field] = nonNegative(raw[field]); });
+    return kvCache;
+  }
+
+  /** Cleans a model profile from a workspace file or a user edit. Also reads the older one-GPU profile shape. */
   function toProfile(raw) {
     const profile = benchmarkRun.createModelProfile();
     if (!isPlainObject(raw)) return profile;
     if (typeof raw.shortName === 'string') profile.shortName = raw.shortName.trim().slice(0, appConfig.maxShortNameLength);
-    benchmarkRun.PROFILE_NUMBER_FIELDS.forEach((field) => { profile[field] = nonNegative(raw[field]); });
-    if (profile.gpuUtilPct !== null && profile.gpuUtilPct > 100) profile.gpuUtilPct = null;
+    profile.modelSizeGb = nonNegative(raw.modelSizeGb);
+    profile.gpuMemoryTotalGb = nonNegative(raw.gpuMemoryTotalGb);
+    if (Array.isArray(raw.gpus) && raw.gpus.length > 0) {
+      profile.gpus = raw.gpus.slice(0, benchmarkRun.MAX_GPUS).map(toGpuUsage);
+    } else if ('vramGb' in raw || 'gpuUtilPct' in raw || 'powerW' in raw) {
+      profile.gpus = [toGpuUsage({ memoryUsedGb: raw.vramGb, gpuUtilPct: raw.gpuUtilPct, powerW: raw.powerW })];
+    }
+    profile.kvCache = toKvCache(raw.kvCache);
     return profile;
   }
 

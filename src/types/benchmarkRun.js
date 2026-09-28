@@ -26,26 +26,56 @@
  * @property {LatencyStats} tpot
  * @property {LatencyStats} itl
  * @property {LatencyStats} e2el
- * @property {Object} raw                the original record, kept so exports are lossless
+ * @property {Object} raw                the original record's plain fields, kept so exports are lossless
+ *
+ * Memory values are in GB as vLLM and nvidia-smi report them (binary GB, i.e. GiB).
+ *
+ * @typedef {Object} GpuUsage             averages over a benchmark, for one GPU
+ * @property {number|null} gpuUtilPct
+ * @property {number|null} memoryUsedGb
+ * @property {number|null} memoryUtilPct  as the monitoring tool reports it
+ * @property {number|null} powerW
+ * @property {number|null} temperatureC
+ *
+ * @typedef {Object} KvCacheStats         from the vLLM server startup log
+ * @property {number|null} memoryGb       KV cache memory across all GPUs
+ * @property {number|null} sizeTokens     "GPU KV cache size: N tokens"
+ * @property {number|null} maxModelLen
+ * @property {number|null} maxConcurrency "Maximum concurrency for <max-model-len> tokens per request: Nx"
  *
  * @typedef {Object} ModelProfile
- * @property {string} shortName          empty means "use the generated short name"
- * @property {number|null} modelSizeGb
- * @property {number|null} vramGb
- * @property {number|null} gpuUtilPct
- * @property {number|null} powerW
+ * @property {string} shortName           empty means "use the generated short name"
+ * @property {number|null} modelSizeGb    model weights in GPU memory, across all GPUs
+ * @property {number|null} gpuMemoryTotalGb  capacity of one GPU
+ * @property {GpuUsage[]} gpus            one entry per GPU the model runs on
+ * @property {KvCacheStats} kvCache
  */
 BenchPanel.define('types/benchmarkRun', [], () => {
   'use strict';
 
   const LATENCY_STAT_KEYS = Object.freeze(['mean', 'median', 'std', 'p50', 'p90', 'p95', 'p99']);
   const LATENCY_METRICS = Object.freeze(['ttft', 'tpot', 'itl', 'e2el']);
-  const PROFILE_NUMBER_FIELDS = Object.freeze(['modelSizeGb', 'vramGb', 'gpuUtilPct', 'powerW']);
+  const GPU_USAGE_FIELDS = Object.freeze(['gpuUtilPct', 'memoryUsedGb', 'memoryUtilPct', 'powerW', 'temperatureC']);
+  const KV_CACHE_FIELDS = Object.freeze(['memoryGb', 'sizeTokens', 'maxModelLen', 'maxConcurrency']);
+  const MAX_GPUS = 16;
+
+  /** @returns {GpuUsage} */
+  function createGpuUsage() {
+    return { gpuUtilPct: null, memoryUsedGb: null, memoryUtilPct: null, powerW: null, temperatureC: null };
+  }
+
+  /** @returns {KvCacheStats} */
+  function createKvCacheStats() {
+    return { memoryGb: null, sizeTokens: null, maxModelLen: null, maxConcurrency: null };
+  }
 
   /** @returns {ModelProfile} */
   function createModelProfile() {
-    return { shortName: '', modelSizeGb: null, vramGb: null, gpuUtilPct: null, powerW: null };
+    return { shortName: '', modelSizeGb: null, gpuMemoryTotalGb: null, gpus: [createGpuUsage()], kvCache: createKvCacheStats() };
   }
 
-  return { LATENCY_STAT_KEYS, LATENCY_METRICS, PROFILE_NUMBER_FIELDS, createModelProfile };
+  return {
+    LATENCY_STAT_KEYS, LATENCY_METRICS, GPU_USAGE_FIELDS, KV_CACHE_FIELDS, MAX_GPUS,
+    createGpuUsage, createKvCacheStats, createModelProfile,
+  };
 });

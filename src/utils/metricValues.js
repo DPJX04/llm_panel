@@ -1,6 +1,6 @@
 /*
  * Reads a metric from a run, including the derived ones.
- * Relative metrics (scaling, speed retention) compare a run with the same model's lowest-concurrency run.
+ * The relative metric (scaling efficiency) compares a run with the same model's lowest-concurrency run.
  */
 BenchPanel.define('utils/metricValues', [], () => {
   'use strict';
@@ -34,13 +34,7 @@ BenchPanel.define('utils/metricValues', [], () => {
     return ideal > 0 ? run.outputThroughput / ideal : null;
   }
 
-  function speedRetention(run, baseline) {
-    const now = baseline && tokensPerSecondFromTpot(run.tpot.mean);
-    const base = baseline && tokensPerSecondFromTpot(baseline.tpot.mean);
-    return now && base ? now / base : null;
-  }
-
-  const RELATIVE = { scalingEfficiency, speedRetention };
+  const RELATIVE = { scalingEfficiency };
 
   /**
    * @param {import('../types/benchmarkRun').BenchmarkRun|null|undefined} run

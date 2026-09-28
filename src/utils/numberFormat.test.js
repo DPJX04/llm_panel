@@ -18,6 +18,13 @@
     assert.equal(numberFormat.formatMetric(NaN, METRICS.meanTtftMs), '—');
   });
 
+  test('format: units sit tight for % and ×, spaced for the rest', () => {
+    assert.equal(numberFormat.formatWithUnit(85.94, 1, '%'), '85.9%');
+    assert.equal(numberFormat.formatWithUnit(2.1, 2, '×'), '2.10×');
+    assert.equal(numberFormat.formatWithUnit(21.3, 2, 'GB'), '21.30 GB');
+    assert.equal(numberFormat.formatWithUnit(null, 2, 'GB'), '—');
+  });
+
   test('format: ratio deltas are signed', () => {
     assert.equal(numberFormat.formatRatioDelta(1.042), '+4.2%');
     assert.equal(numberFormat.formatRatioDelta(0.97), '−3.0%');

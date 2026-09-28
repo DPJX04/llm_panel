@@ -1,28 +1,36 @@
 /*
- * The headline winners: best throughput under load, fastest first token, fastest per-user
- * generation, best latency under load, and (when hardware is entered) best throughput per GB.
+ * The headline winners: best throughput under load, fastest per-user generation, fastest first token,
+ * fastest full answer under load, and (when GPU memory is entered) best throughput per GB.
+ * A lead inside the tie tolerance is reported as a tie, not a win.
  */
 BenchPanel.define('features/overview/highlights', [
-  'constants/metricCatalog', 'utils/runCollection', 'utils/metricValues', 'utils/ranking', 'utils/numberFormat',
-], (metricCatalog, runCollection, metricValues, ranking, numberFormat) => {
+  'constants/metricCatalog', 'constants/rankingRules', 'utils/runCollection', 'utils/metricValues', 'utils/ranking',
+  'utils/numberFormat', 'utils/hardwareSummary',
+], (metricCatalog, rankingRules, runCollection, metricValues, ranking, numberFormat, hardwareSummary) => {
   'use strict';
 
-  function lead(winner, runnerUp, better) {
-    if (!runnerUp || !winner.value || !runnerUp.value) return null;
-    if (better === metricCatalog.HIGHER) {
-      return `${numberFormat.formatNumber((winner.value / runnerUp.value - 1) * 100, 1)}% ahead of ${runnerUp.model.name}`;
+  function lead(winner, runnerUp, metric, tolerance) {
+    if (!runnerUp || !winner.value || !runnerUp.value) return { text: null, tone: 'good' };
+    if (ranking.isWithin(winner.value, runnerUp.value, tolerance)) {
+      return { text: `≈ tie with ${runnerUp.model.name} (within ${rankingRules.TIE_TOLERANCE_LABEL})`, tone: 'neutral' };
     }
-    return `${numberFormat.formatNumber((runnerUp.value / winner.value - 1) * 100, 1)}% faster than ${runnerUp.model.name}`;
+    if (metric.better === metricCatalog.HIGHER) {
+      return { text: `${numberFormat.formatNumber((winner.value / runnerUp.value - 1) * 100, 1)}% ahead of ${runnerUp.model.name}`, tone: 'good' };
+    }
+    return { text: `${numberFormat.formatNumber((runnerUp.value / winner.value - 1) * 100, 1)}% faster than ${runnerUp.model.name}`, tone: 'good' };
   }
 
   function highlight(label, entries, metric, context) {
-    const ranked = ranking.rankEntries(entries, metric.better).filter((entry) => entry.value !== null);
+    const tolerance = metric.exact ? 0 : rankingRules.TIE_TOLERANCE;
+    const ranked = ranking.rankEntries(entries, metric.better, tolerance).filter((entry) => entry.value !== null);
     if (ranked.length === 0) return null;
+    const detail = lead(ranked[0], ranked[1], metric, tolerance);
     return {
       label,
       value: numberFormat.formatMetric(ranked[0].value, metric),
       model: ranked[0].model,
-      detail: lead(ranked[0], ranked[1], metric.better),
+      detail: detail.text,
+      detailTone: detail.tone,
       context,
     };
   }
@@ -58,12 +66,12 @@ BenchPanel.define('features/overview/highlights', [
 
     const perGb = models.map((model) => {
       const run = runCollection.findRun(runs, model.key, levels.peak);
-      const vram = model.profile.vramGb;
-      return { model, value: run && vram ? run.outputThroughput / vram : null };
+      return { model, value: run ? hardwareSummary.memoryEfficiency(model.profile, run.outputThroughput).tpsPerGb : null };
     });
     if (perGb.filter((entry) => entry.value !== null).length >= 2) {
       tiles.push(highlight('Best memory efficiency', perGb,
-        { format: 'fixed', decimals: 2, unit: 'TPS/GB', better: metricCatalog.HIGHER }, `Output TPS per GB of VRAM at concurrency ${peak}`));
+        { format: 'fixed', decimals: 2, unit: 'TPS/GB', better: metricCatalog.HIGHER },
+        `Output TPS per GB of GPU memory used, at concurrency ${peak}`));
     }
     return tiles.filter(Boolean);
   }

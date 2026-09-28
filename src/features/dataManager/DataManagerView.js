@@ -1,10 +1,10 @@
-/* The Data tab: load results, name models, add hardware numbers, export, and manage loaded runs. */
+/* The Data tab: load results, name models, add hardware and memory details, export, and manage loaded runs. */
 BenchPanel.define('features/dataManager/DataManagerView', [
-  'components/dom', 'components/Section/Section', 'store/workspaceStore',
-  'features/dataManager/FileDropZone', 'features/dataManager/ImportNotice', 'features/dataManager/ModelProfilesTable',
+  'components/dom', 'components/Section/Section', 'components/Callout/Callout', 'store/workspaceStore',
+  'features/dataManager/FileDropZone', 'features/dataManager/ModelProfilesTable', 'features/dataManager/HardwareEditor',
   'features/dataManager/LoadedRunsTable', 'features/dataManager/fileImportController',
   'features/dataManager/profileController', 'features/dataManager/exportActions',
-], (dom, section, workspaceStore, fileDropZone, importNotice, modelProfilesTable, loadedRunsTable,
+], (dom, section, callout, workspaceStore, fileDropZone, modelProfilesTable, hardwareEditor, loadedRunsTable,
   fileImportController, profileController, exportActions) => {
   'use strict';
 
@@ -22,14 +22,26 @@ BenchPanel.define('features/dataManager/DataManagerView', [
     }
   }
 
+  function Notice(notice) {
+    return dom.h('div', { className: 'data-notice' }, callout.Callout(notice));
+  }
+
   function mountDataManager(container) {
     let notice = null;
+    let hardwareNotice = null;
     let confirmingClear = false;
+    let selectedKey = null;
+    const paste = { open: false, text: '' };
 
     async function handleFiles(files, options) {
-      notice = { tone: 'success', title: `Reading ${files.length} file${files.length === 1 ? '' : 's'}…`, lines: [] };
+      notice = { tone: 'info', title: `Reading ${files.length} file${files.length === 1 ? '' : 's'}…`, lines: [] };
       render();
       notice = await fileImportController.importFiles(files, options);
+      render();
+    }
+
+    async function handleLogFile(model, file) {
+      hardwareNotice = await profileController.fillFromLogFile(model, file);
       render();
     }
 
@@ -50,26 +62,38 @@ BenchPanel.define('features/dataManager/DataManagerView', [
       workspaceStore.clearAll();
     }
 
+    const pasteHandlers = {
+      onToggle: () => { paste.open = !paste.open; render(); },
+      onText: (text) => { paste.text = text; },
+      onApply: (text) => {
+        const model = workspaceStore.getModels().find((candidate) => candidate.key === selectedKey);
+        hardwareNotice = profileController.applyGpuTable(model, text);
+        if (hardwareNotice.tone === 'success') { paste.open = false; paste.text = ''; }
+        render();
+      },
+    };
+
     function build() {
       const state = workspaceStore.getState();
       const models = workspaceStore.getModels();
       const runCounts = {};
       state.runs.forEach((run) => { runCounts[run.modelKey] = (runCounts[run.modelKey] || 0) + 1; });
       const storageError = workspaceStore.getStorageError();
-      const hasRuns = state.runs.length > 0;
+      const selected = models.find((model) => model.key === selectedKey) || models[0];
+      selectedKey = selected ? selected.key : null;
 
       return dom.h('div', { className: 'view-stack' },
         section.Section({
           title: 'Load benchmark results',
-          description: 'Each vLLM result file holds one model at one concurrency level. Load every file for every model; a newer run for the same model and level replaces the older one. Everything stays in this browser.',
+          description: 'Drop vLLM result files (one run per file, or many runs in one file) and, optionally, each model\'s `vllm serve` log to fill its memory and KV cache details. A newer run for the same model and level replaces the older one. Everything stays in this browser.',
         },
         fileDropZone.FileDropZone({ onFiles: handleFiles }),
-        notice ? importNotice.ImportNotice(notice) : null,
-        storageError ? importNotice.ImportNotice({ tone: 'warning', title: storageError, lines: ['Results will be lost on refresh. Use Export workspace to keep them.'] }) : null),
+        notice ? Notice(notice) : null,
+        storageError ? Notice({ tone: 'warning', title: storageError, lines: ['Results will be lost on refresh. Use Export workspace to keep them.'] }) : null),
 
-        hasRuns ? section.Section({
+        selected ? section.Section({
           title: 'Models',
-          description: 'Short names are used everywhere in the panel. Result files do not record hardware, so add model size, VRAM, GPU utilisation and power (from nvidia-smi during the run) to unlock the GPU efficiency comparison.',
+          description: 'Short names are used everywhere in the panel.',
           actions: [
             dom.h('button', { type: 'button', className: 'button', text: 'Export workspace', title: 'Save runs and model details as one file you can share or load later', on: { click: () => handleExport(exportActions.exportWorkspace) } }),
             dom.h('button', { type: 'button', className: 'button', text: 'Export CSV', title: 'Every run with all metrics, for Excel', on: { click: () => handleExport(exportActions.exportCsv) } }),
@@ -81,7 +105,19 @@ BenchPanel.define('features/dataManager/DataManagerView', [
           onRemove: (model) => workspaceStore.removeModel(model.key),
         })) : null,
 
-        hasRuns ? section.Section({
+        selected ? hardwareEditor.HardwareEditor({
+          models,
+          model: selected,
+          onSelect: (key) => { selectedKey = key; hardwareNotice = null; render(); },
+          onEdit: profileController.updateProfileField,
+          onAddGpu: profileController.addGpu,
+          onRemoveGpu: profileController.removeGpu,
+          onLogFile: handleLogFile,
+          paste: { ...paste, ...pasteHandlers },
+          notice: hardwareNotice,
+        }) : null,
+
+        selected ? section.Section({
           title: `Loaded runs (${state.runs.length})`,
           actions: [dom.h('button', {
             type: 'button',

@@ -83,9 +83,14 @@
   });
 
   test('parser: a workspace file round-trips runs, profiles and model order', () => {
+    const profile = {
+      shortName: 'Qwen 4B', modelSizeGb: 7.63, gpuMemoryTotalGb: 24,
+      gpus: [{ gpuUtilPct: 95.7, memoryUsedGb: 21.3, memoryUtilPct: 93.6, powerW: 223.9, temperatureC: 67.3 }],
+      kvCache: { memoryGb: 12.34, sizeTokens: 89856, maxModelLen: 32768, maxConcurrency: 2.74 },
+    };
     const state = {
       runs: [run({ max_concurrency: 1 }), run({ max_concurrency: 8 })],
-      profiles: { 'Qwen/Qwen3-4B-Instruct-2507': { shortName: 'Qwen 4B', modelSizeGb: 8, vramGb: 21.02, gpuUtilPct: 85.9, powerW: 205.1 } },
+      profiles: { 'Qwen/Qwen3-4B-Instruct-2507': profile },
       modelOrder: ['Qwen/Qwen3-4B-Instruct-2507'],
     };
     const text = JSON.stringify(workspaceStorage.toWorkspaceFile(state));
@@ -93,16 +98,35 @@
     assert.ok(parsed.ok, parsed.error);
     const workspace = parsed.data.workspace;
     assert.equal(workspace.runs.length, 2);
-    assert.equal(workspace.profiles['Qwen/Qwen3-4B-Instruct-2507'].vramGb, 21.02);
+    assert.deepEqual(workspace.profiles['Qwen/Qwen3-4B-Instruct-2507'], profile);
     assert.deepEqual(workspace.modelOrder, ['Qwen/Qwen3-4B-Instruct-2507']);
   });
 
+  test('parser: a profile saved by the first version (one GPU, flat fields) still loads', () => {
+    const profile = resultParser.toProfile({ shortName: 'Twu31', modelSizeGb: 18.2, vramGb: 21.02, gpuUtilPct: 85.9, powerW: 205.1 });
+    assert.equal(profile.gpus.length, 1);
+    assert.equal(profile.gpus[0].memoryUsedGb, 21.02);
+    assert.equal(profile.gpus[0].gpuUtilPct, 85.9);
+    assert.equal(profile.gpus[0].powerW, 205.1);
+    assert.equal(profile.kvCache.sizeTokens, null);
+  });
+
   test('parser: profile values are cleaned at the boundary', () => {
-    const profile = resultParser.toProfile({ shortName: `  ${'x'.repeat(80)}  `, vramGb: -1, gpuUtilPct: 150, powerW: '200', modelSizeGb: 18.2 });
+    const profile = resultParser.toProfile({
+      shortName: `  ${'x'.repeat(80)}  `, modelSizeGb: 18.2, gpuMemoryTotalGb: -24,
+      gpus: [{ gpuUtilPct: 150, memoryUsedGb: -1, powerW: '200', temperatureC: 400 }],
+      kvCache: { sizeTokens: 'lots', maxConcurrency: 2.5 },
+    });
     assert.equal(profile.shortName.length, 40);
-    assert.equal(profile.vramGb, null, 'negative');
-    assert.equal(profile.gpuUtilPct, null, 'over 100%');
-    assert.equal(profile.powerW, null, 'string');
     assert.equal(profile.modelSizeGb, 18.2);
+    assert.equal(profile.gpuMemoryTotalGb, null, 'negative capacity');
+    assert.deepEqual(profile.gpus[0], { gpuUtilPct: null, memoryUsedGb: null, memoryUtilPct: null, powerW: null, temperatureC: null });
+    assert.equal(profile.kvCache.sizeTokens, null, 'text');
+    assert.equal(profile.kvCache.maxConcurrency, 2.5);
+  });
+
+  test('parser: at most 16 GPUs are kept, and an empty GPU list becomes one blank GPU', () => {
+    assert.equal(resultParser.toProfile({ gpus: new Array(40).fill({ powerW: 100 }) }).gpus.length, 16);
+    assert.equal(resultParser.toProfile({ gpus: [] }).gpus.length, 1);
   });
 })();

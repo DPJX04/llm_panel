@@ -1,0 +1,47 @@
+.callout {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 13px;
+}
+
+.callout__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.callout--success .callout__icon { background: var(--status-good); }
+.callout--warning .callout__icon { background: var(--status-warning); color: #3b2a00; }
+.callout--error .callout__icon { background: var(--status-critical); }
+.callout--info .callout__icon { background: var(--accent); }
+
+.callout__body {
+  min-width: 0;
+}
+
+.callout__title {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.callout__lines {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+}
+
+.callout__note {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}

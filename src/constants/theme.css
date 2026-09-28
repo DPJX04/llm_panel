@@ -38,6 +38,7 @@
   --series-7: #4a3aa7;
   --series-8: #e34948;
   --series-other: #898781;
+  --free-memory: #e1e0d9;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,6 +71,7 @@
     --series-6: #008300;
     --series-7: #9085e9;
     --series-8: #e66767;
+    --free-memory: #2c2c2a;
   }
 }
 
@@ -102,4 +104,5 @@
   --series-6: #008300;
   --series-7: #9085e9;
   --series-8: #e66767;
+  --free-memory: #2c2c2a;
 }

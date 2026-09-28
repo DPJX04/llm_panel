@@ -16,7 +16,6 @@ BenchPanel.define('features/modelDetail/LatencyPercentileTable', [
     { metric: 'e2el', stat: 'p50', label: 'E2E P50', format: 'seconds', decimals: 2 },
     { metric: 'e2el', stat: 'p95', label: 'E2E P95', format: 'seconds', decimals: 2 },
     { metric: 'e2el', stat: 'p99', label: 'E2E P99', format: 'seconds', decimals: 2 },
-    { metric: 'ttft', stat: 'std', label: 'TTFT std dev', format: 'ms', decimals: 1 },
   ];
 
   /** @param {{ runs: Object[] }} props */

@@ -4,9 +4,10 @@ BenchPanel.define('config/appConfig', [], () => {
 
   return {
     storageKey: 'benchmark-panel.workspace.v1',
+    preferencesKey: 'benchmark-panel.preferences.v1',
     workspaceFileKind: 'benchmark-panel-workspace',
-    workspaceFileVersion: 1,
-    resultFileExtensions: ['.json', '.jsonl', '.md', '.txt'],
+    workspaceFileVersion: 2,
+    resultFileExtensions: ['.json', '.jsonl', '.md', '.txt', '.log'],
     maxShortNameLength: 40,
   };
 });
