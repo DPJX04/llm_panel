@@ -10,7 +10,10 @@ It runs in any browser with nothing to install: **double-click `index.html`**.
    vllm bench serve --model <model> --max-concurrency 16 --num-prompts 160 --save-result
    ```
 2. Open `index.html`, go to **Data**, and drop in every result file, or pick the whole folder.
-   JSON, JSON Lines, and JSON saved as `.md`/`.txt` all work. A newer run for the same model and level replaces the older one.
+   One file may also hold many runs, e.g. concurrency 1–16 together: a JSON array, one JSON object per line
+   (`--append-result`), objects pasted back to back, a wrapper like `{"results": [...]}`, or an object keyed by
+   concurrency like `{"c1": {...}, "c16": {...}}`. The file extension can be `.json`, `.jsonl`, `.md` or `.txt`.
+   A newer run for the same model and level replaces the older one.
 3. In **Data → Models**, optionally give each model a short name and add model size, VRAM, GPU utilisation and power
    (from `nvidia-smi` during the run). The result files do not record hardware, and these numbers unlock the GPU efficiency table.
 4. Present from **Overview**. Use **Compare models** and **Model detail** for questions.

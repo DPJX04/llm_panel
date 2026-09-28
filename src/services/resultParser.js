@@ -1,11 +1,12 @@
 /*
  * The validation gate for everything the panel reads: vLLM `bench serve` result files
- * (JSON, JSON Lines, or JSON inside a Markdown code fence) and saved workspace files.
+ * (one run or many runs per file, in any common layout) and saved workspace files.
  * Nothing past this file sees an unchecked value.
  */
 BenchPanel.define('services/resultParser', [
-  'types/result', 'types/benchmarkRun', 'config/appConfig', 'utils/errorMessage', 'utils/modelNaming',
-], (result, benchmarkRun, appConfig, errorMessage, modelNaming) => {
+  'types/result', 'types/benchmarkRun', 'config/appConfig',
+  'utils/errorMessage', 'utils/modelNaming', 'utils/jsonScanner', 'utils/recordFinder',
+], (result, benchmarkRun, appConfig, errorMessage, modelNaming, jsonScanner, recordFinder) => {
   'use strict';
 
   const BYTE_ORDER_MARK = String.fromCharCode(0xfeff);
@@ -32,9 +33,30 @@ BenchPanel.define('services/resultParser', [
     return stats;
   }
 
-  /** @returns {import('../types/result').Result<import('../types/benchmarkRun').BenchmarkRun>} */
-  function toRun(raw, sourceFile) {
-    if (!isPlainObject(raw)) return result.fail('record is not a JSON object');
+  /**
+   * Keeps only the plain values of a record. `--save-detailed` adds per-request arrays
+   * (every generated text, every token time) that would bloat the saved workspace.
+   */
+  function summaryFields(raw, concurrencyHint) {
+    const summary = {};
+    Object.keys(raw).forEach((key) => {
+      if (typeof raw[key] !== 'object' || raw[key] === null) summary[key] = raw[key];
+    });
+    if ((summary.max_concurrency === null || summary.max_concurrency === undefined) && concurrencyHint) {
+      summary.max_concurrency = concurrencyHint;
+    }
+    return summary;
+  }
+
+  /**
+   * @param {unknown} input
+   * @param {string} sourceFile
+   * @param {number|null} [concurrencyHint]  used when the record does not state its own max_concurrency
+   * @returns {import('../types/result').Result<import('../types/benchmarkRun').BenchmarkRun>}
+   */
+  function toRun(input, sourceFile, concurrencyHint) {
+    if (!isPlainObject(input)) return result.fail('record is not a JSON object');
+    const raw = summaryFields(input, concurrencyHint);
     const missing = REQUIRED_NUMBERS.filter((field) => num(raw[field]) === null);
     if (typeof raw.model_id !== 'string' || raw.model_id.trim() === '') missing.unshift('model_id');
     if (missing.length > 0) return result.fail(`missing ${missing.join(', ')}`);
@@ -74,7 +96,10 @@ BenchPanel.define('services/resultParser', [
     });
   }
 
-  /** Every JSON value the text holds: one document, fenced blocks in Markdown, or one per line. */
+  /**
+   * Every JSON value the text holds: one document, fenced blocks in Markdown,
+   * or several values back to back (one per line, pretty-printed, glued, or comma separated).
+   */
   function readJsonValues(text) {
     const trimmed = text.replace(BYTE_ORDER_MARK, '').trim();
     if (trimmed === '') throw new Error('File is empty');
@@ -82,7 +107,12 @@ BenchPanel.define('services/resultParser', [
       return [JSON.parse(trimmed)];
     } catch (wholeFileError) {
       const fenced = Array.from(trimmed.matchAll(/```(?:json)?\s*\n([\s\S]*?)```/g), (match) => match[1].trim());
-      const chunks = fenced.length > 0 ? fenced : trimmed.split(/\r?\n/).filter((line) => line.trim() !== '');
+      let chunks;
+      try {
+        chunks = (fenced.length > 0 ? fenced : [trimmed]).flatMap(jsonScanner.splitJsonValues);
+      } catch (scanError) {
+        throw fenced.length > 0 ? scanError : wholeFileError;
+      }
       if (chunks.length < 2 && fenced.length === 0) throw wholeFileError;
       return chunks.map((chunk) => JSON.parse(chunk));
     }
@@ -141,11 +171,11 @@ BenchPanel.define('services/resultParser', [
       return result.ok({ runs: [], workspace: workspace.data, warnings: workspace.data.warnings.map((w) => `${fileName}: ${w}`) });
     }
 
-    const records = values.flatMap((value) => (Array.isArray(value) ? value : [value]));
+    const records = values.flatMap(recordFinder.findRunRecords);
     const runs = [];
     const warnings = [];
-    records.forEach((record, index) => {
-      const run = toRun(record, fileName);
+    records.forEach(({ record, concurrencyHint }, index) => {
+      const run = toRun(record, fileName, concurrencyHint);
       if (run.ok) runs.push(run.data);
       else warnings.push(`${fileName}${records.length > 1 ? ` record ${index + 1}` : ''}: ${run.error}`);
     });

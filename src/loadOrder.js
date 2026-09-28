@@ -40,6 +40,8 @@ window.BenchPanelLoadOrder = Object.freeze({
     'src/utils/keyLevels.js',
     'src/utils/chartScale.js',
     'src/utils/csvBuilder.js',
+    'src/utils/jsonScanner.js',
+    'src/utils/recordFinder.js',
     // services
     'src/services/resultParser.js',
     'src/services/resultFileService.js',
@@ -110,6 +112,8 @@ window.BenchPanelLoadOrder = Object.freeze({
     'src/utils/modelNaming.test.js',
     'src/utils/chartScale.test.js',
     'src/utils/csvBuilder.test.js',
+    'src/utils/jsonScanner.test.js',
+    'src/utils/recordFinder.test.js',
     'src/services/resultParser.test.js',
     'src/features/overview/scorecard.test.js',
     'tests/runTests.js',

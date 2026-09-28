@@ -25,6 +25,38 @@
     assert.equal(resultParser.parseResultText(markdown, 'a.md').data.runs.length, 1, 'markdown');
   });
 
+  test('parser: one file holding concurrency 1-16 loads in every common layout', () => {
+    const runs = [1, 2, 4, 8, 16].map((level) => rawRun({ max_concurrency: level }));
+    const layouts = {
+      'array': JSON.stringify(runs, null, 2),
+      'json lines': runs.map((raw) => JSON.stringify(raw)).join('\n'),
+      'pretty-printed back to back': runs.map((raw) => JSON.stringify(raw, null, 2)).join('\n'),
+      'glued on one line': runs.map((raw) => JSON.stringify(raw)).join(''),
+      'comma separated': runs.map((raw) => JSON.stringify(raw, null, 2)).join(',\n'),
+      'wrapper object': JSON.stringify({ results: runs }),
+    };
+    Object.keys(layouts).forEach((layout) => {
+      const parsed = resultParser.parseResultText(layouts[layout], 'all.json');
+      assert.ok(parsed.ok, `${layout}: ${parsed.error}`);
+      assert.deepEqual(parsed.data.runs.map((item) => item.concurrency), [1, 2, 4, 8, 16], layout);
+    });
+  });
+
+  test('parser: an object keyed by concurrency fills in a missing max_concurrency', () => {
+    const noLevel = rawRun();
+    delete noLevel.max_concurrency;
+    const parsed = resultParser.parseResultText(JSON.stringify({ c1: noLevel, c16: noLevel }), 'keyed.json');
+    assert.deepEqual(parsed.data.runs.map((item) => item.concurrency), [1, 16]);
+    assert.equal(parsed.data.runs[1].raw.max_concurrency, 16, 'kept for workspace export');
+  });
+
+  test('parser: per-request arrays from --save-detailed are not kept', () => {
+    const parsed = resultParser.parseResultText(JSON.stringify(rawRun({ ttfts: [0.1, 0.2], generated_texts: ['a', 'b'] })), 'detailed.json');
+    assert.equal(parsed.data.runs[0].raw.ttfts, undefined);
+    assert.equal(parsed.data.runs[0].raw.generated_texts, undefined);
+    assert.equal(parsed.data.runs[0].raw.model_id, 'Qwen/Qwen3-4B-Instruct-2507');
+  });
+
   test('parser: names the missing fields of an incomplete record', () => {
     const raw = rawRun();
     delete raw.mean_tpot_ms;
