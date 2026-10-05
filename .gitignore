@@ -9,6 +9,10 @@ dist/
 
 # local benchmark result drops (load them into the panel, don't commit them)
 results/
+Result.md
+
+# evaluation ground truth: holds company production data, never commit it
+References/
 
 # editor / OS noise
 .vscode/
