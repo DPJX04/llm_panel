@@ -1,36 +1,3 @@
-.drop-zone {
-  border: 1.5px dashed var(--baseline);
-  border-radius: 12px;
-  padding: 28px 20px;
-  text-align: center;
-  background: var(--surface-2);
-  transition: border-color 120ms ease, background 120ms ease;
-}
-
-.drop-zone.is-dragging {
-  border-color: var(--accent);
-  background: var(--accent-wash);
-}
-
-.drop-zone__title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.drop-zone__hint {
-  margin: 6px 0 14px;
-  color: var(--text-secondary);
-  font-size: 13px;
-}
-
-.drop-zone__buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
-
 .profile-input {
   font: inherit;
   font-size: 13px;

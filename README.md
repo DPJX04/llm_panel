@@ -24,6 +24,18 @@ It runs in any browser with nothing to install: **double-click `index.html`**.
 
 6. To test **accuracy**, open **Accuracy**, paste the model server's URL, and start a run (see [Accuracy tests](#accuracy-tests)).
 
+7. To compare **vector databases**, open **Vector DB** and drop in VectorDBBench result files
+   (`result_<date>_<label>_<db>.json`) or a CSV with one run per row, or use **Choose files**. This tab has its own
+   drop zone and its own saved list, so database results never mix with the LLM results.
+   A CSV needs a `db` column; it also reads `qps`, `recall` (0–1 or a percentage), `p99 latency (ms)` (or
+   `serial_latency_p99` in seconds), the ef search under any name the JSON uses (`hnsw_ef`, `ef_search`, …), `case_id`
+   (or `dataset`), `k`, `db_label`, `run_id`, `task_label` and `timestamp`/`date`. Column names ignore case, spaces and
+   `_`. Any other column (`m`, `ef_construct`, …) counts as an index setting, and runs only average together when those
+   match, so give CSV runs the same settings columns as the JSON runs they should average with. Results are grouped by dataset (named from the VectorDBBench case id, e.g. case 11 is
+   OpenAI 5M · 1536D and case 5 is Cohere 1M · 768D) and by ef search (`hnsw_ef`, `ef_search`, `ef`, `ef_runtime`), each
+   with its config below. Runs with the same database, index config and case are averaged into one row; loading the
+   same file twice counts it once.
+
 Everything is saved in this browser, so a refresh keeps your data.
 **Export workspace** saves runs, accuracy reports and model details in one file. Load that file on another PC to see the same panel.
 **Export CSV** gives every run with every metric and the model's hardware details, for Excel. **Print / PDF** prints the tab that is open.
@@ -39,6 +51,7 @@ To share the panel itself as one file, run `bash scripts/build-single-file.sh`. 
 | Model detail | One model: summary per level (incl. Req/s, Total TPS, TPOT), token generation speed, latency percentiles, run details |
 | Accuracy | Run a question set against a model server; accuracy, wrong and declined rates, format misses and answer speed per model, beside its benchmark speed; accuracy vs time chart, accuracy by category, every question for every model, and each answer |
 | Data | Load files and logs, name models, enter hardware and memory, export, remove runs and accuracy reports |
+| Vector DB | VectorDBBench results, one section per dataset: headline tiles (highest QPS, best recall, lowest p99), QPS vs recall (one line per database, one point per ef search, with the average QPS lead), QPS bars and recall dots at each ef search. Then one card per dataset and ef search with average QPS, recall and serial p99 per database config, QPS and p99 latency across concurrency, and the config; every loaded run at the end |
 
 ## Metrics
 
@@ -173,14 +186,14 @@ index.html                 open this
 src/
   platform/                module registry, layer rules, loader, load-error banner
   loadOrder.js             the one list of files, bottom layer first
-  types/                   Result shape, BenchmarkRun, ModelProfile, QuestionSet and EvalReport shapes
+  types/                   Result shape, BenchmarkRun, ModelProfile, QuestionSet, EvalReport and DbResult shapes
   constants/               metric catalogues, concurrency notes, starter question set, design tokens (theme.css)
   config/                  app settings (storage key, file kinds)
   utils/                   pure logic: metrics, ranking, run merging, formatting, CSV, answer grading
   services/                file reading and validation, browser storage, downloads, model server requests
   store/                   workspaceStore: loaded runs, accuracy reports and model profiles
   components/              shared UI: DataTable, LineChart, ScatterChart, BarList, StatTile, ...
-  features/                overview, comparison, modelDetail, accuracy, dataManager (index.js is each one's only public door)
+  features/                overview, comparison, modelDetail, accuracy, dataManager, vectorDb (index.js is each one's only public door)
   navigation/              app shell and tabs
   main.js                  entry point
 question-sets/             question sets to load in the Accuracy tab

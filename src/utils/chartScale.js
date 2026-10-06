@@ -22,5 +22,19 @@ BenchPanel.define('utils/chartScale', [], () => {
     return ticks;
   }
 
-  return { niceTicks };
+  /**
+   * Round ticks covering min..max without forcing zero, e.g. 0.98 … 1 for recall, so small differences stay visible.
+   * For line charts only: a bar's length must start at zero. A flat range is widened a little so it still has a span.
+   * @returns {number[]}
+   */
+  function rangeTicks(min, max, targetCount) {
+    const span = max > min ? max - min : Math.abs(max) * 0.02 || 1;
+    const step = niceStep(span / Math.max(1, targetCount));
+    const ticks = [];
+    for (let value = Math.floor(min / step) * step; value < max + step * 0.5; value += step) ticks.push(Number(value.toPrecision(12)));
+    if (ticks.length < 2 || ticks[ticks.length - 1] < max) ticks.push(Number((ticks[ticks.length - 1] + step).toPrecision(12)));
+    return ticks;
+  }
+
+  return { niceTicks, rangeTicks };
 });

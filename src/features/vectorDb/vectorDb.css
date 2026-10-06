@@ -1,0 +1,82 @@
+/* The Vector DB tab: the notice under the drop zone, its charts, and config text that may wrap. */
+.vector-db-notice {
+  margin-top: 14px;
+}
+
+/* A dataset's headline tiles, above its charts. */
+.vector-db-tiles {
+  margin-bottom: 22px;
+}
+
+/* Lets a chart shrink inside its grid cell instead of pushing the grid wider. */
+.vector-db-chart {
+  min-width: 0;
+}
+
+/* Several charts stacked in one column of the chart grid. */
+.vector-db-chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.vector-db-chart__note {
+  margin: -4px 0 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* QPS-versus-recall chart, built on lineChart.css: ef labels beside the points, and the hovered point grows. */
+.qps-recall-chart__label {
+  fill: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.qps-recall-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.qps-recall-chart__point.is-active .line-chart__dot {
+  r: 7px;
+}
+
+/* Grouped columns: bars and dots wear the database colour; the values above them stay in text colour. */
+.grouped-chart__bar {
+  fill: var(--mark-color);
+}
+
+.grouped-chart__dot {
+  fill: var(--mark-color);
+  stroke: var(--surface-1);
+  stroke-width: 2;
+}
+
+.grouped-chart__value {
+  fill: var(--text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.grouped-chart__hit {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.grouped-chart__key {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.vector-db-config {
+  display: block;
+  min-width: 16em;
+  max-width: 36em;
+  white-space: normal;
+}

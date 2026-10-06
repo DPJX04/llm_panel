@@ -5,6 +5,8 @@ BenchPanel.define('config/appConfig', [], () => {
   return {
     storageKey: 'benchmark-panel.workspace.v1',
     preferencesKey: 'benchmark-panel.preferences.v1',
+    // Vector database results are saved apart from the LLM workspace, so neither one's Clear or Export touches the other.
+    dbResultsStorageKey: 'benchmark-panel.db-results.v1',
     workspaceFileKind: 'benchmark-panel-workspace',
     workspaceFileVersion: 3,
     resultFileExtensions: ['.json', '.jsonl', '.md', '.txt', '.log'],

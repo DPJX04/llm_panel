@@ -13,8 +13,10 @@ BenchPanel.define('components/LineChart/chartTooltip', ['components/dom'], (dom)
      * @param {number} anchorX  pixels from the host's left edge
      * @param {string} heading
      * @param {Array<{ name: string, color: string, valueText: string }>} rows
+     * @param {number} [anchorY]  pixels from the host's top edge, for a chart of points: the tooltip is then centred
+     *   beside the point instead of sitting at the top of the chart (where a line chart's crosshair readout goes)
      */
-    function show(anchorX, heading, rows) {
+    function show(anchorX, heading, rows, anchorY) {
       dom.clear(node);
       dom.append(node, [
         dom.h('div', { className: 'chart-tooltip__heading', text: heading }),
@@ -26,6 +28,9 @@ BenchPanel.define('components/LineChart/chartTooltip', ['components/dom'], (dom)
       node.hidden = false;
       const fitsRight = anchorX + GAP_PX + node.offsetWidth <= host.clientWidth;
       node.style.left = `${fitsRight ? anchorX + GAP_PX : Math.max(0, anchorX - GAP_PX - node.offsetWidth)}px`;
+      // Kept inside the chart, so a point near the top or bottom edge does not push the tooltip out of view.
+      const lowestTop = Math.max(0, host.clientHeight - node.offsetHeight);
+      node.style.top = typeof anchorY === 'number' ? `${Math.min(lowestTop, Math.max(0, anchorY - node.offsetHeight / 2))}px` : '';
     }
 
     function hide() {
