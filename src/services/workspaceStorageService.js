@@ -7,7 +7,7 @@ BenchPanel.define('services/workspaceStorageService', [
 ], (result, appConfig, errorMessage, resultParser) => {
   'use strict';
 
-  /** The saved shape. Runs are stored as their original records, so loading re-runs the same validation. */
+  /** The saved shape. Runs and evaluation reports are stored as their original records, so loading re-runs the same validation. */
   function toWorkspaceFile(state) {
     return {
       kind: appConfig.workspaceFileKind,
@@ -16,6 +16,7 @@ BenchPanel.define('services/workspaceStorageService', [
       records: state.runs.map((run) => ({ sourceFile: run.sourceFile, data: run.raw })),
       profiles: state.profiles,
       modelOrder: state.modelOrder,
+      evalReports: (state.evalReports || []).map((report) => ({ sourceFile: report.sourceFile, data: report.raw })),
     };
   }
 

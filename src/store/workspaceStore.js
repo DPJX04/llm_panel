@@ -1,15 +1,17 @@
 /*
- * App-wide state: the loaded runs, each model's profile, and the order models were first seen in
- * (which fixes each model's chart colour). Saves itself after every change.
+ * App-wide state: the loaded runs, the accuracy evaluation reports, each model's profile, and the order models were
+ * first seen in (which fixes each model's chart colour). Saves itself after every change.
  */
 BenchPanel.define('store/workspaceStore', [
-  'types/benchmarkRun', 'utils/runCollection', 'utils/modelNaming', 'services/workspaceStorageService',
-], (benchmarkRun, runCollection, modelNaming, storage) => {
+  'types/benchmarkRun', 'utils/runCollection', 'utils/evalReportCollection', 'utils/modelNaming',
+  'services/workspaceStorageService',
+], (benchmarkRun, runCollection, evalReportCollection, modelNaming, storage) => {
   'use strict';
 
   const SERIES_SLOTS = 8;
+  const EMPTY = Object.freeze({ runs: [], evalReports: [], profiles: {}, modelOrder: [] });
 
-  let state = { runs: [], profiles: {}, modelOrder: [] };
+  let state = EMPTY;
   let storageError = null;
   const listeners = new Set();
 
@@ -20,11 +22,17 @@ BenchPanel.define('store/workspaceStore', [
     listeners.forEach((listener) => listener(state));
   }
 
-  function withModelOrder(runs, previousOrder) {
-    const present = new Set(runs.map((run) => run.modelKey));
+  /** Keeps the existing order (and so each model's colour) and appends models seen for the first time. */
+  function withModelOrder(runs, evalReports, previousOrder) {
+    const keys = runs.map((run) => run.modelKey).concat(evalReports.map((report) => report.modelKey));
+    const present = new Set(keys);
     const kept = previousOrder.filter((key) => present.has(key));
-    runs.forEach((run) => { if (!kept.includes(run.modelKey)) kept.push(run.modelKey); });
+    keys.forEach((key) => { if (!kept.includes(key)) kept.push(key); });
     return kept;
+  }
+
+  function withItems(runs, evalReports, profiles, previousOrder) {
+    return { runs, evalReports, profiles, modelOrder: withModelOrder(runs, evalReports, previousOrder) };
   }
 
   /** Loads the workspace saved in this browser, if any. */
@@ -33,7 +41,8 @@ BenchPanel.define('store/workspaceStore', [
     if (!loaded.ok) { storageError = loaded.error; return; }
     if (loaded.data) {
       const runs = runCollection.mergeRuns([], loaded.data.runs).runs;
-      state = { runs, profiles: loaded.data.profiles, modelOrder: withModelOrder(runs, loaded.data.modelOrder) };
+      const evalReports = evalReportCollection.mergeEvalReports([], loaded.data.evalReports).reports;
+      state = withItems(runs, evalReports, loaded.data.profiles, loaded.data.modelOrder);
     }
   }
 
@@ -51,37 +60,59 @@ BenchPanel.define('store/workspaceStore', [
   }
 
   /**
-   * Adds parsed runs and workspace files.
-   * @returns {{ added: number, replaced: number, skipped: number }}
+   * Adds parsed runs, evaluation reports and workspace files.
+   * @returns {{ added: number, replaced: number, skipped: number,
+   *   reports: { added: number, replaced: number, skipped: number } }}
    */
-  function importResults(runs, workspaces) {
+  function importResults(runs, workspaces, evalReports) {
     const profiles = { ...state.profiles };
     let order = state.modelOrder;
-    const incoming = [];
+    const incomingRuns = [];
+    const incomingReports = [];
     workspaces.forEach((workspace) => {
       Object.assign(profiles, workspace.profiles);
       order = order.concat(workspace.modelOrder.filter((key) => !order.includes(key)));
-      incoming.push(...workspace.runs);
+      incomingRuns.push(...workspace.runs);
+      incomingReports.push(...workspace.evalReports);
     });
-    incoming.push(...runs);
-    const merged = runCollection.mergeRuns(state.runs, incoming);
-    commit({ runs: merged.runs, profiles, modelOrder: withModelOrder(merged.runs, order) });
-    return { added: merged.added, replaced: merged.replaced, skipped: merged.skipped };
+    incomingRuns.push(...runs);
+    incomingReports.push(...(evalReports || []));
+    const mergedRuns = runCollection.mergeRuns(state.runs, incomingRuns);
+    const mergedReports = evalReportCollection.mergeEvalReports(state.evalReports, incomingReports);
+    commit(withItems(mergedRuns.runs, mergedReports.reports, profiles, order));
+    return {
+      added: mergedRuns.added,
+      replaced: mergedRuns.replaced,
+      skipped: mergedRuns.skipped,
+      reports: { added: mergedReports.added, replaced: mergedReports.replaced, skipped: mergedReports.skipped },
+    };
+  }
+
+  /** Adds the report of an accuracy run that just finished. The caller passes a report that went through the validation gate. */
+  function addEvalReport(report) {
+    const merged = evalReportCollection.mergeEvalReports(state.evalReports, [report]);
+    commit(withItems(state.runs, merged.reports, state.profiles, state.modelOrder));
   }
 
   function removeRun(runId) {
-    const runs = state.runs.filter((run) => run.id !== runId);
-    commit({ ...state, runs, modelOrder: withModelOrder(runs, state.modelOrder) });
+    commit(withItems(state.runs.filter((run) => run.id !== runId), state.evalReports, state.profiles, state.modelOrder));
   }
 
+  function removeEvalReport(reportId) {
+    commit(withItems(state.runs, state.evalReports.filter((report) => report.id !== reportId), state.profiles, state.modelOrder));
+  }
+
+  /** Removes the model's runs and evaluation reports. */
   function removeModel(modelKey) {
-    const runs = state.runs.filter((run) => run.modelKey !== modelKey);
-    commit({ ...state, runs, modelOrder: withModelOrder(runs, state.modelOrder) });
+    commit(withItems(
+      state.runs.filter((run) => run.modelKey !== modelKey),
+      state.evalReports.filter((report) => report.modelKey !== modelKey),
+      state.profiles, state.modelOrder));
   }
 
   function clearAll() {
     storage.clear();
-    commit({ runs: [], profiles: {}, modelOrder: [] });
+    commit(EMPTY);
   }
 
   /**
@@ -93,13 +124,15 @@ BenchPanel.define('store/workspaceStore', [
   }
 
   /**
-   * The models in fixed order, each with its display name, colour slot (1-8, or 0 past eight) and profile.
-   * @returns {Array<{ key: string, modelId: string, label: string|null, name: string, colorSlot: number, profile: Object }>}
+   * Every model with runs or evaluation reports, in fixed order, each with its display name,
+   * colour slot (1-8, or 0 past eight) and profile.
+   * @returns {Array<{ key: string, modelId: string, label: string|null, name: string, colorSlot: number, profile: Object,
+   *   hasRuns: boolean, hasEvalReports: boolean }>}
    */
-  function getModels() {
+  function getAllModels() {
     const models = state.modelOrder.map((key) => {
-      const run = state.runs.find((candidate) => candidate.modelKey === key);
-      return { key, modelId: run.modelId, label: run.label };
+      const source = state.runs.find((run) => run.modelKey === key) || state.evalReports.find((report) => report.modelKey === key);
+      return { key, modelId: source.modelId, label: source.label };
     });
     const defaults = modelNaming.defaultShortNames(models);
     return models.map((model, index) => {
@@ -109,9 +142,19 @@ BenchPanel.define('store/workspaceStore', [
         name: profile.shortName || defaults[model.key],
         colorSlot: index < SERIES_SLOTS ? index + 1 : 0,
         profile,
+        hasRuns: state.runs.some((run) => run.modelKey === model.key),
+        hasEvalReports: state.evalReports.some((report) => report.modelKey === model.key),
       };
     });
   }
 
-  return { init, subscribe, getState, getStorageError, importResults, removeRun, removeModel, clearAll, setProfile, getModels };
+  /** The models that have benchmark runs; what the speed views compare. */
+  function getModels() {
+    return getAllModels().filter((model) => model.hasRuns);
+  }
+
+  return {
+    init, subscribe, getState, getStorageError, importResults, addEvalReport, removeRun, removeEvalReport, removeModel,
+    clearAll, setProfile, getModels, getAllModels,
+  };
 });

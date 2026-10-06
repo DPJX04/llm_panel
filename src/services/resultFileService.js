@@ -1,10 +1,11 @@
 /*
- * Reads files the user picked or dropped. Benchmark results and workspace files go to the result parser;
- * anything that is not JSON is tried as a `vllm serve` log.
+ * Reads files the user picked or dropped. Evaluation reports go to their own parser; benchmark results and
+ * workspace files go to the result parser; anything that is not JSON is tried as a `vllm serve` log.
  */
 BenchPanel.define('services/resultFileService', [
   'types/result', 'config/appConfig', 'utils/errorMessage', 'services/resultParser', 'services/vllmLogParser',
-], (result, appConfig, errorMessage, resultParser, vllmLogParser) => {
+  'services/evalReportParser',
+], (result, appConfig, errorMessage, resultParser, vllmLogParser, evalReportParser) => {
   'use strict';
 
   function hasResultExtension(fileName) {
@@ -26,7 +27,7 @@ BenchPanel.define('services/resultFileService', [
    * Reads every file. A bad file becomes a warning; the good ones still load.
    * @param {File[]} files
    * @param {{ fromFolder?: boolean }} [options]  folder picks skip files without a known extension
-   * @returns {Promise<import('../types/result').Result<{ runs: Object[], workspaces: Object[],
+   * @returns {Promise<import('../types/result').Result<{ runs: Object[], workspaces: Object[], evalReports: Object[],
    *   logs: Array<{ fileName: string, stats: Object }>, warnings: string[] }>>}
    */
   async function readResultFiles(files, options) {
@@ -36,11 +37,18 @@ BenchPanel.define('services/resultFileService', [
 
     const runs = [];
     const workspaces = [];
+    const evalReports = [];
     const logs = [];
     const warnings = [];
     for (const file of candidates) {
       try {
         const text = await file.text();
+        const report = evalReportParser.parseEvalReportText(text, file.name);
+        if (report) {
+          if (report.ok) evalReports.push(report.data);
+          else warnings.push(report.error);
+          continue;
+        }
         const parsed = resultParser.parseResultText(text, file.name);
         if (parsed.ok) {
           runs.push(...parsed.data.runs);
@@ -55,10 +63,10 @@ BenchPanel.define('services/resultFileService', [
         warnings.push(`${file.name}: ${errorMessage.toErrorMessage(cause)}`);
       }
     }
-    if (runs.length === 0 && workspaces.length === 0 && logs.length === 0) {
+    if (runs.length === 0 && workspaces.length === 0 && evalReports.length === 0 && logs.length === 0) {
       return result.fail(warnings.join('\n') || 'Nothing could be loaded.');
     }
-    return result.ok({ runs, workspaces, logs, warnings });
+    return result.ok({ runs, workspaces, evalReports, logs, warnings });
   }
 
   return { readResultFiles, readLogFile };

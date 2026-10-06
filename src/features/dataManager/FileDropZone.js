@@ -11,7 +11,7 @@ BenchPanel.define('features/dataManager/FileDropZone', ['components/dom'], (dom)
 
     const zone = dom.h('div', { className: 'drop-zone' },
       dom.h('div', { className: 'drop-zone__title', text: 'Drop benchmark result files here' }),
-      dom.h('p', { className: 'drop-zone__hint', text: 'vLLM bench serve JSON results (one run per file, or many runs in one file), vllm serve logs (.log), or a saved workspace file.' }),
+      dom.h('p', { className: 'drop-zone__hint', text: 'vLLM bench serve JSON results (one run per file, or many runs in one file), vllm serve logs (.log), accuracy report files, or a saved workspace file.' }),
       dom.h('div', { className: 'drop-zone__buttons' },
         dom.h('button', { type: 'button', className: 'button button--primary', text: 'Choose files', on: { click: () => fileInput.click() } }),
         dom.h('button', { type: 'button', className: 'button', text: 'Choose folder', on: { click: () => folderInput.click() } })),

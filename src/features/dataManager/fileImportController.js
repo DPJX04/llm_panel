@@ -41,14 +41,17 @@ BenchPanel.define('features/dataManager/fileImportController', [
     const read = await resultFileService.readResultFiles(files, options);
     if (!read.ok) return { tone: 'error', title: 'Nothing was loaded', lines: read.error.split('\n') };
 
-    const { runs, workspaces, logs, warnings } = read.data;
-    const summary = workspaceStore.importResults(runs, workspaces);
+    const { runs, workspaces, evalReports, logs, warnings } = read.data;
+    const summary = workspaceStore.importResults(runs, workspaces, evalReports);
     const logResult = applyLogs(logs);
 
     const details = [];
     if (summary.added) details.push(plural(summary.added, 'new run'));
     if (summary.replaced) details.push(`${plural(summary.replaced, 'run')} updated with a newer result`);
     if (summary.skipped) details.push(`${plural(summary.skipped, 'older run')} ignored (a newer one is already loaded)`);
+    if (summary.reports.added) details.push(plural(summary.reports.added, 'new accuracy report'));
+    if (summary.reports.replaced) details.push(`${plural(summary.reports.replaced, 'accuracy report')} updated with a newer run`);
+    if (summary.reports.skipped) details.push(`${plural(summary.reports.skipped, 'older accuracy report')} ignored`);
     if (logResult.applied.length) details.push(`memory and KV cache filled for ${logResult.applied.join(', ')}`);
     const allWarnings = warnings.concat(logResult.warnings);
     return {

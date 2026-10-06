@@ -1,0 +1,30 @@
+/* Builds on lineChart.css for the plot, grid, ticks, legend and tooltip. */
+
+.scatter-chart__dot {
+  fill: var(--dot-color);
+  stroke: var(--surface-1);
+  stroke-width: 2;
+  transition: r 0.12s ease;
+}
+
+.scatter-chart__point.is-active .scatter-chart__dot {
+  r: 8px;
+}
+
+.scatter-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.scatter-chart__label {
+  fill: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.chart-legend__key--dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

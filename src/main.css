@@ -78,6 +78,16 @@ body {
   color: #fff;
 }
 
+.button:disabled,
+.button:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.button--primary:disabled:hover {
+  background: var(--accent);
+}
+
 .status-flag {
   font-weight: 600;
 }

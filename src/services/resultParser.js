@@ -5,8 +5,8 @@
  */
 BenchPanel.define('services/resultParser', [
   'types/result', 'types/benchmarkRun', 'config/appConfig',
-  'utils/errorMessage', 'utils/modelNaming', 'utils/jsonScanner', 'utils/recordFinder',
-], (result, benchmarkRun, appConfig, errorMessage, modelNaming, jsonScanner, recordFinder) => {
+  'utils/errorMessage', 'utils/modelNaming', 'utils/jsonScanner', 'utils/recordFinder', 'services/evalReportParser',
+], (result, benchmarkRun, appConfig, errorMessage, modelNaming, jsonScanner, recordFinder, evalReportParser) => {
   'use strict';
 
   const BYTE_ORDER_MARK = String.fromCharCode(0xfeff);
@@ -163,7 +163,8 @@ BenchPanel.define('services/resultParser', [
   }
 
   /**
-   * @returns {import('../types/result').Result<{ runs: Object[], profiles: Object, modelOrder: string[], warnings: string[] }>}
+   * @returns {import('../types/result').Result<{ runs: Object[], profiles: Object, modelOrder: string[], evalReports: Object[],
+   *   warnings: string[] }>}
    */
   function parseWorkspace(value) {
     if (!isWorkspace(value) || !Array.isArray(value.records)) return result.fail('Not a Benchmark Panel workspace file');
@@ -180,7 +181,14 @@ BenchPanel.define('services/resultParser', [
       Object.keys(value.profiles).forEach((key) => { profiles[key] = toProfile(value.profiles[key]); });
     }
     const modelOrder = Array.isArray(value.modelOrder) ? value.modelOrder.filter((key) => typeof key === 'string') : [];
-    return result.ok({ runs, profiles, modelOrder, warnings });
+    const evalReports = [];
+    (Array.isArray(value.evalReports) ? value.evalReports : []).forEach((record, index) => {
+      const sourceFile = isPlainObject(record) && typeof record.sourceFile === 'string' ? record.sourceFile : 'workspace';
+      const report = evalReportParser.toEvalReport(isPlainObject(record) ? record.data : null, sourceFile);
+      if (report.ok) evalReports.push(report.data);
+      else warnings.push(`Workspace evaluation report ${index + 1}: ${report.error}`);
+    });
+    return result.ok({ runs, profiles, modelOrder, evalReports, warnings });
   }
 
   /**

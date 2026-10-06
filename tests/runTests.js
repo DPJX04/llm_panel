@@ -1,15 +1,19 @@
-/* Runs every registered test and writes the outcome into the page and its title (read by scripts/run-tests.sh). */
-(function () {
+/*
+ * Runs every registered test and writes the outcome into the page and its title (read by scripts/run-tests.sh).
+ * A test may return a promise; it is awaited before the next test starts.
+ */
+(async function () {
   'use strict';
 
-  const results = window.BenchPanelTests.registered.map((entry) => {
+  const results = [];
+  for (const entry of window.BenchPanelTests.registered) {
     try {
-      entry.fn();
-      return { name: entry.name, passed: true };
+      await entry.fn();
+      results.push({ name: entry.name, passed: true });
     } catch (error) {
-      return { name: entry.name, passed: false, message: error.message };
+      results.push({ name: entry.name, passed: false, message: error.message });
     }
-  });
+  }
   const loadError = document.querySelector('[role="alert"]');
   if (loadError) results.push({ name: 'app scripts load', passed: false, message: loadError.textContent });
 
