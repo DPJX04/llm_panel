@@ -51,7 +51,7 @@ To share the panel itself as one file, run `bash scripts/build-single-file.sh`. 
 | Model detail | One model: summary per level (incl. Req/s, Total TPS, TPOT), token generation speed, latency percentiles, run details |
 | Accuracy | Run a question set against a model server; accuracy, wrong and declined rates, format misses and answer speed per model, beside its benchmark speed; accuracy vs time chart, accuracy by category, every question for every model, and each answer |
 | Data | Load files and logs, name models, enter hardware and memory, export, remove runs and accuracy reports |
-| Vector DB | VectorDBBench results, one section per dataset: headline tiles (highest QPS, best recall, lowest p99), QPS vs recall (one line per database, one point per ef search, with the average QPS lead), QPS bars and recall dots at each ef search. Then one card per dataset and ef search with average QPS, recall and serial p99 per database config, QPS and p99 latency across concurrency, and the config; every loaded run at the end |
+| Vector DB | VectorDBBench results, one section per dataset: headline tiles (highest QPS, best recall, lowest p99), QPS vs recall (one line per database, one point per ef search, with the average QPS lead), QPS bars and recall at each ef search (bars or dots, switchable and remembered). Then one card per dataset and ef search with average QPS, recall and serial p99 per database config, QPS and p99 latency across concurrency, and the config; every loaded run at the end |
 
 ## Metrics
 

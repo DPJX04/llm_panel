@@ -1,8 +1,7 @@
 /*
- * Columns grouped by ef search, one colour per database, each value written on top.
- * mark 'bar' draws bars from zero, because a bar's length is read as its value.
- * mark 'dot' draws dots on an axis that starts near the data, for values that sit close together such as recall:
- * as bars from zero, 97% and 99% would look the same.
+ * Columns grouped by ef search, one colour per database, each value written on top, drawn as bars or dots.
+ * The axis starts at zero, or with zoomAxis near the data, for values that sit close together such as recall
+ * (from zero, 97% and 99% would look the same). Zoomed bars exaggerate the gaps, so the caller says so beside the chart.
  * Hover a group, or focus the chart and use the arrow keys, for every value in it.
  */
 BenchPanel.define('features/vectorDb/GroupedColumnChart', [
@@ -28,6 +27,17 @@ BenchPanel.define('features/vectorDb/GroupedColumnChart', [
       + `Q${left + width} ${top} ${left + width} ${top + r}V${bottom}Z`;
   }
 
+  /**
+   * Ticks for an axis that starts near the data rather than at zero. It starts at least half a step below the
+   * lowest value, so the shortest bar still shows and gaps are not blown up more than they need to be.
+   */
+  function zoomedTicks(values) {
+    const lowest = Math.min(...values);
+    const ticks = chartScale.rangeTicks(lowest, Math.max(...values), 4);
+    const step = ticks[1] - ticks[0];
+    return lowest - ticks[0] < step / 2 ? [Number((ticks[0] - step).toPrecision(12)), ...ticks] : ticks;
+  }
+
   function Legend(series, mark) {
     return dom.h('figcaption', { className: 'chart-legend' }, series.map((line) =>
       dom.h('span', { className: 'chart-legend__item' },
@@ -40,6 +50,7 @@ BenchPanel.define('features/vectorDb/GroupedColumnChart', [
    * @param {Array<{ name: string, colorSlot: number }>} props.series
    * @param {Array<{ label: string, values: Array<number|null> }>} props.groups  values in series order
    * @param {'bar'|'dot'} props.mark
+   * @param {boolean} [props.zoomAxis]  start the axis near the data instead of at zero
    * @param {(value: number) => string} props.formatValue  the text on top of each mark and in the tooltip
    * @param {(value: number) => string} props.formatTick
    * @param {string} props.ariaLabel
@@ -48,9 +59,7 @@ BenchPanel.define('features/vectorDb/GroupedColumnChart', [
     const values = props.groups.flatMap((group) => group.values).filter((value) => typeof value === 'number');
     if (values.length === 0) return dom.h('p', { className: 'hint', text: 'No values to chart.' });
 
-    const ticks = props.mark === 'dot'
-      ? chartScale.rangeTicks(Math.min(...values), Math.max(...values), 4)
-      : chartScale.niceTicks(Math.max(...values), 4);
+    const ticks = props.zoomAxis ? zoomedTicks(values) : chartScale.niceTicks(Math.max(...values), 4);
     const plotRight = WIDTH - MARGIN.right;
     const plotBottom = HEIGHT - MARGIN.bottom;
     const y = (value) => plotBottom - ((value - ticks[0]) / (ticks[ticks.length - 1] - ticks[0])) * (plotBottom - MARGIN.top);

@@ -21,6 +21,20 @@
   min-width: 0;
 }
 
+/* A chart's title, with a control such as "Show as" on the right; the control drops below when space runs out. */
+.vector-db-chart__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+
+.vector-db-chart__header .chart-title {
+  margin: 0;
+}
+
 .vector-db-chart__note {
   margin: -4px 0 8px;
   font-size: 12.5px;

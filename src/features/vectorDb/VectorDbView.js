@@ -6,14 +6,16 @@
 BenchPanel.define('features/vectorDb/VectorDbView', [
   'components/dom', 'components/Section/Section', 'components/Callout/Callout', 'components/StatTile/StatTile',
   'components/DropZone/DropZone', 'components/renderKeepingFocus', 'utils/dbResultSummary', 'utils/dbResultCharts',
-  'features/vectorDb/dbResultsController', 'features/vectorDb/headlineTiles',
+  'services/preferencesService', 'features/vectorDb/dbResultsController', 'features/vectorDb/headlineTiles',
   'features/vectorDb/ComparisonCharts', 'features/vectorDb/ConcurrencyCharts', 'features/vectorDb/QpsRecallTable',
   'features/vectorDb/ConfigTable', 'features/vectorDb/LoadedDbRunsTable',
-], (dom, section, callout, statTile, dropZone, focus, dbResultSummary, dbResultCharts, dbResultsController, headlineTiles,
-  comparisonCharts, concurrencyCharts, qpsRecallTable, configTable, loadedDbRunsTable) => {
+], (dom, section, callout, statTile, dropZone, focus, dbResultSummary, dbResultCharts, preferencesService, dbResultsController,
+  headlineTiles, comparisonCharts, concurrencyCharts, qpsRecallTable, configTable, loadedDbRunsTable) => {
   'use strict';
 
   const CONFIRM_WINDOW_MS = 4000;
+  const RECALL_MARK_PREFERENCE = 'vectorDb.recallMark';
+  const DEFAULT_RECALL_MARK = 'bar';
 
   function Notice(notice) {
     return dom.h('div', { className: 'vector-db-notice' }, callout.Callout(notice));
@@ -35,29 +37,47 @@ BenchPanel.define('features/vectorDb/VectorDbView', [
   }
 
   /** One dataset's headline numbers and charts. Datasets differ in size, so their numbers are never compared with each other. */
-  function DatasetSection(entry) {
+  /**
+   * @param {Object} entry  one dataset from dbResultSummary.groupByCase
+   * @param {{ recallMark: string, onRecallMark: (mark: string) => void }} recallChoice  bars or dots for the recall chart
+   */
+  function DatasetSection(entry, recallChoice) {
     return section.Section({
       title: entry.caseName,
       description: 'Left: each line is one database and each point one ef search value; up and to the right is better. '
         + 'Right: the same runs at each ef search. Hover any chart for exact values.',
     },
     dom.h('div', { className: 'stat-tiles vector-db-tiles' }, headlineTiles.buildHeadlineTiles(entry.rows).map(statTile.StatTile)),
-    comparisonCharts.ComparisonCharts({ rows: entry.rows, caseName: entry.caseName }));
+    comparisonCharts.ComparisonCharts({ rows: entry.rows, caseName: entry.caseName, ...recallChoice }));
   }
 
   /** Everything below the load button: one section per dataset with its tiles and charts, then one card per dataset and ef search. */
-  function Results(results) {
+  function Results(results, recallChoice) {
     const rows = dbResultCharts.withLines(dbResultSummary.averageByConfig(results));
     return [
-      dbResultSummary.groupByCase(rows).map(DatasetSection),
+      dbResultSummary.groupByCase(rows).map((entry) => DatasetSection(entry, recallChoice)),
       dbResultSummary.groupByCaseAndEf(rows).map(CaseEfCard),
     ];
+  }
+
+  /** The saved way to draw recall (bars or dots), or the default when none was saved or the saved one is unknown. */
+  function savedRecallMark() {
+    const saved = preferencesService.load(RECALL_MARK_PREFERENCE, DEFAULT_RECALL_MARK);
+    return comparisonCharts.RECALL_MARKS.some((mark) => mark.value === saved) ? saved : DEFAULT_RECALL_MARK;
   }
 
   function mountVectorDb(container) {
     const controller = dbResultsController.createDbResultsController();
     let notice = null;
     let confirmingClear = false;
+    let recallMark = savedRecallMark();
+
+    // Switching bars and dots changes every dataset's recall chart, and is remembered for the next visit.
+    function handleRecallMark(mark) {
+      recallMark = mark;
+      preferencesService.save(RECALL_MARK_PREFERENCE, mark);
+      render();
+    }
 
     async function handleFiles(files) {
       if (files.length === 0) return;
@@ -105,7 +125,7 @@ BenchPanel.define('features/vectorDb/VectorDbView', [
 
         results.length === 0
           ? dom.h('p', { className: 'hint', text: 'No database results yet. Drop VectorDBBench result files above; each dataset and ef search value gets its own table.' })
-          : Results(results),
+          : Results(results, { recallMark, onRecallMark: handleRecallMark }),
 
         results.length > 0 ? section.Section({
           title: `Loaded runs (${results.length})`,
