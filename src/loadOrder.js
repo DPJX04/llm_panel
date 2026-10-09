@@ -50,6 +50,7 @@ window.BenchPanelLoadOrder = Object.freeze({
     'src/utils/numberFormat.js',
     'src/utils/errorMessage.js',
     'src/utils/metricValues.js',
+    'src/utils/perUserMetric.js',
     'src/utils/runCollection.js',
     'src/utils/ranking.js',
     'src/utils/modelNaming.js',
@@ -100,6 +101,7 @@ window.BenchPanelLoadOrder = Object.freeze({
     'src/services/dbResultStorageService.js',
     // store
     'src/store/workspaceStore.js',
+    'src/store/perUserFormulaStore.js',
     // shared UI
     'src/components/dom.js',
     'src/components/renderKeepingFocus.js',
@@ -110,6 +112,7 @@ window.BenchPanelLoadOrder = Object.freeze({
     'src/components/StatTile/StatTile.js',
     'src/components/EmptyState/EmptyState.js',
     'src/components/SelectField/SelectField.js',
+    'src/components/PerUserFormulaSelect/PerUserFormulaSelect.js',
     'src/components/Callout/Callout.js',
     'src/components/RankLabel/RankLabel.js',
     'src/components/SettingsCheck/SettingsCheck.js',
@@ -197,6 +200,7 @@ window.BenchPanelLoadOrder = Object.freeze({
     'tests/testRunner.js',
     'src/platform/moduleRegistry.test.js',
     'src/utils/metricValues.test.js',
+    'src/utils/perUserMetric.test.js',
     'src/utils/runCollection.test.js',
     'src/utils/ranking.test.js',
     'src/utils/numberFormat.test.js',

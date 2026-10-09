@@ -66,6 +66,13 @@
   color: var(--text-muted);
 }
 
+/* A value with a note on hover, e.g. Per user tok/s worked out with option B: dotted underline, like a header with a tooltip. */
+.data-table .cell-note {
+  text-decoration: underline dotted var(--text-muted);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
 .data-table .cell-sub {
   display: block;
   font-size: 11.5px;

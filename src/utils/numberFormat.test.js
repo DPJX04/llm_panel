@@ -10,7 +10,7 @@
     assert.equal(numberFormat.formatMetric(25.04, METRICS.meanTpotMs), '25.0 ms');
     assert.equal(numberFormat.formatMetric(1234.56, METRICS.outputThroughput), '1,234.6');
     assert.equal(numberFormat.formatMetric(0.9875, METRICS.successRate), '98.8%');
-    assert.equal(numberFormat.formatMetric(43.3, METRICS.tokensPerRequest), '43.3 tok/s');
+    assert.equal(numberFormat.formatMetric(43.3, METRICS.decodeTokensPerSecond), '43.3 tok/s');
   });
 
   test('format: missing values show a dash', () => {

@@ -43,7 +43,7 @@ BenchPanel.define('features/accuracy/QualityTable', [
     if (rows.some((row) => row.peakRun)) {
       columns.push(
         metricColumn.metricColumn('outputThroughput', { run: (row) => row.peakRun, label: `Output TPS @C${numberFormat.formatConcurrency(levels.peak)}` }),
-        metricColumn.metricColumn('tokensPerRequest', { run: (row) => row.lowRun, label: `Tok/s per request @C${numberFormat.formatConcurrency(levels.low)}` }));
+        metricColumn.metricColumn('decodeTokensPerSecond', { run: (row) => row.lowRun, label: `Decode tok/s @C${numberFormat.formatConcurrency(levels.low)}` }));
     }
     columns.push(
       { label: 'Settings', title: 'How the run asked: temperature, max tokens, repeats, questions at once, system prompt.',

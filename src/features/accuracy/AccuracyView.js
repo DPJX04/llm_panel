@@ -59,7 +59,7 @@ BenchPanel.define('features/accuracy/AccuracyView', [
         section.Section({
           title: 'Accuracy and answer speed',
           description: 'One row per model, best first. Rates leave out questions that got no reply. Time and tokens are per question, asked one at a time. Hover a column header for its meaning.',
-          footnote: levels.peak !== undefined ? 'Output TPS and tok/s per request come from the loaded benchmark runs, for models that have them.' : null,
+          footnote: levels.peak !== undefined ? 'Output TPS and Decode tok/s come from the loaded benchmark runs, for models that have them.' : null,
         },
         qualityTable.QualityTable({ rows, levels }),
         truncated.length > 0 ? dom.h('div', { className: 'accuracy-notice' }, callout.Callout({

@@ -1,17 +1,20 @@
 /* The Compare tab: every model side by side. Each part can be shown or hidden; the choice is remembered. */
 BenchPanel.define('features/comparison/ComparisonView', [
   'components/dom', 'components/SelectField/SelectField', 'components/EmptyState/EmptyState', 'components/SettingsCheck/SettingsCheck',
-  'store/workspaceStore', 'services/preferencesService', 'constants/metricCatalog', 'utils/keyLevels',
+  'components/PerUserFormulaSelect/PerUserFormulaSelect', 'store/workspaceStore', 'store/perUserFormulaStore',
+  'services/preferencesService', 'constants/metricCatalog', 'utils/keyLevels', 'utils/perUserMetric',
   'features/comparison/SectionToggles', 'features/comparison/hardwareRows',
   'features/comparison/MetricTrendSection', 'features/comparison/ConcurrencyRankingSection', 'features/comparison/LatencySection',
   'features/comparison/ScalingSection', 'features/comparison/GpuUsageSection', 'features/comparison/MemorySection',
   'features/comparison/KvCacheSection',
-], (dom, selectField, emptyState, settingsCheck, workspaceStore, preferencesService, metricCatalog, keyLevels,
-  sectionToggles, hardwareRows, metricTrendSection, concurrencyRankingSection, latencySection, scalingSection,
-  gpuUsageSection, memorySection, kvCacheSection) => {
+], (dom, selectField, emptyState, settingsCheck, perUserFormulaSelect, workspaceStore, perUserFormulaStore, preferencesService,
+  metricCatalog, keyLevels, perUserMetric, sectionToggles, hardwareRows, metricTrendSection, concurrencyRankingSection,
+  latencySection, scalingSection, gpuUsageSection, memorySection, kvCacheSection) => {
   'use strict';
 
   const HIDDEN_PREFERENCE = 'compare.hiddenSections';
+  // The menu choice for Per user tok/s; it stands for whichever formula (A or B) is picked.
+  const PER_USER_CHOICE = 'perUser';
 
   const SECTIONS = [
     { id: 'trend', label: 'Focus metric chart', render: (ctx) => metricTrendSection.MetricTrendSection(ctx.props) },
@@ -24,7 +27,7 @@ BenchPanel.define('features/comparison/ComparisonView', [
   ];
 
   function mountComparison(container, context) {
-    let focusKey = 'outputThroughput';
+    let focusChoice = PER_USER_CHOICE;
     const saved = preferencesService.load(HIDDEN_PREFERENCE, []);
     const hidden = new Set(Array.isArray(saved) ? saved.filter((id) => SECTIONS.some((item) => item.id === id)) : []);
 
@@ -43,20 +46,23 @@ BenchPanel.define('features/comparison/ComparisonView', [
           actionLabel: 'Go to Data', onAction: () => context.navigate('data') });
       }
       const levels = keyLevels.keyLevels(runs, models.map((model) => model.key));
+      const perUserKey = perUserMetric.metricKeyFor(perUserFormulaStore.getFormula());
+      const focusKey = focusChoice === PER_USER_CHOICE ? perUserKey : focusChoice;
       const ctx = {
-        props: { models, runs, focusKey },
+        props: { models, runs, focusKey, perUserKey },
         hardware: { rows: hardwareRows.hardwareRows(models, runs, levels.peak), peakLevel: levels.peak, onEditHardware: () => context.navigate('data') },
       };
 
       const focusPicker = selectField.SelectField({
         label: 'Rank and chart by',
-        value: focusKey,
-        options: metricCatalog.FOCUS_METRIC_KEYS.map((key) => ({ value: key, label: metricCatalog.METRICS[key].title })),
-        onChange: (key) => { focusKey = key; render(); },
+        value: focusChoice,
+        options: [{ value: PER_USER_CHOICE, label: metricCatalog.METRICS[perUserKey].title }]
+          .concat(metricCatalog.FOCUS_METRIC_KEYS.map((key) => ({ value: key, label: metricCatalog.METRICS[key].title }))),
+        onChange: (choice) => { focusChoice = choice; render(); },
       });
 
       return dom.h('div', { className: 'view-stack' },
-        dom.h('div', { className: 'filter-bar' }, focusPicker,
+        dom.h('div', { className: 'filter-bar' }, focusPicker, perUserFormulaSelect.PerUserFormulaSelect(),
           sectionToggles.SectionToggles({ sections: SECTIONS, hidden, onToggle: toggle })),
         settingsCheck.SettingsCheck({ runs, models }),
         SECTIONS.filter((item) => !hidden.has(item.id)).map((item) => item.render(ctx)));
@@ -68,6 +74,7 @@ BenchPanel.define('features/comparison/ComparisonView', [
     }
 
     render();
+    perUserFormulaStore.subscribe(render);
     return workspaceStore.subscribe(render);
   }
 

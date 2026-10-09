@@ -15,8 +15,13 @@ BenchPanel.define('constants/metricCatalog', [], () => {
       description: 'Generated tokens per second across all concurrent requests. The main capacity number.' },
     totalTokenThroughput: { label: 'Total TPS', title: 'Total tokens per second', better: HIGHER, format: 'fixed', decimals: 1,
       description: 'Prompt plus generated tokens processed per second.' },
-    tokensPerRequest: { label: 'Tok/s per request', title: 'Token speed per request', better: HIGHER, format: 'fixed', decimals: 1,
-      unit: 'tok/s', description: 'How fast one user sees text appear. Approximated as 1000 ÷ mean TPOT (ms).' },
+    decodeTokensPerSecond: { label: 'Decode tok/s', title: 'Decode speed', better: HIGHER, format: 'fixed', decimals: 1, unit: 'tok/s',
+      description: 'Speed of each request while it is generating tokens. Does not include TTFT or queue wait time.' },
+    // Per user tok/s comes in two formulas; the user picks one (PER_USER_FORMULAS) and every view shows that one.
+    perUserTokensPerSecondA: { label: 'Per user tok/s', title: 'Per user speed (option A)', better: HIGHER, format: 'fixed', decimals: 1, unit: 'tok/s',
+      description: 'Total output TPS shared across all concurrent users. Includes TTFT and queue wait time.' },
+    perUserTokensPerSecondB: { label: 'Per user tok/s', title: 'Per user speed (option B)', better: HIGHER, format: 'fixed', decimals: 1, unit: 'tok/s',
+      description: 'Average output tokens per request divided by full request time. Includes TTFT and queue wait time.' },
     meanTtftMs: { label: 'Mean TTFT', title: 'Mean time to first token', better: LOWER, format: 'ms', decimals: 0,
       description: 'Wait before the first word appears.' },
     p95TtftMs: { label: 'P95 TTFT', title: 'P95 time to first token', better: LOWER, format: 'ms', decimals: 0,
@@ -37,13 +42,22 @@ BenchPanel.define('constants/metricCatalog', [], () => {
   });
 
   /**
-   * Metrics a user can pick as the focus of the comparison view, in menu order.
-   * Req/s, Total TPS and TPOT are left out: with a fixed output length they rank models
-   * exactly like Output TPS and tok/s per request. They stay in Model detail.
+   * Metrics a user can pick as the focus of the comparison view, in menu order, after Per user tok/s (which the view
+   * adds first, in the formula the user picked). Req/s, Total TPS and TPOT are left out: with a fixed output length
+   * they rank models exactly like Output TPS and Decode tok/s. They stay in Model detail.
    */
   const FOCUS_METRIC_KEYS = Object.freeze([
-    'outputThroughput', 'tokensPerRequest', 'meanTtftMs', 'p95TtftMs', 'meanE2eMs', 'p95E2eMs',
+    'outputThroughput', 'decodeTokensPerSecond', 'meanTtftMs', 'p95TtftMs', 'meanE2eMs', 'p95E2eMs',
   ]);
 
-  return { HIGHER, LOWER, METRICS, FOCUS_METRIC_KEYS };
+  /** The two formulas Per user tok/s can use, in menu order; A is the default. */
+  const PER_USER_FORMULAS = Object.freeze([
+    { value: 'A', label: 'A: Output TPS ÷ concurrency', metricKey: 'perUserTokensPerSecondA' },
+    { value: 'B', label: 'B: Tokens per request ÷ E2E time', metricKey: 'perUserTokensPerSecondB' },
+  ]);
+
+  /** Shown on a value where option A was asked for but the run has no max_concurrency, so option B was used. */
+  const PER_USER_FALLBACK_NOTE = 'Option B was used: this run has no max_concurrency, which option A needs.';
+
+  return { HIGHER, LOWER, METRICS, FOCUS_METRIC_KEYS, PER_USER_FORMULAS, PER_USER_FALLBACK_NOTE };
 });

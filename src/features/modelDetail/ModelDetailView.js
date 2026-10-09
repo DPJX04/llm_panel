@@ -1,12 +1,13 @@
 /* The Model detail tab: everything about one model, picked from a drop-down. */
 BenchPanel.define('features/modelDetail/ModelDetailView', [
   'components/dom', 'components/Section/Section', 'components/SelectField/SelectField', 'components/EmptyState/EmptyState',
-  'components/MetricTrendChart/MetricTrendChart', 'store/workspaceStore', 'utils/runCollection', 'utils/numberFormat',
-  'utils/hardwareSummary',
-  'features/modelDetail/SummaryTable', 'features/modelDetail/TokenSpeedTable',
+  'components/MetricTrendChart/MetricTrendChart', 'components/PerUserFormulaSelect/PerUserFormulaSelect',
+  'store/workspaceStore', 'store/perUserFormulaStore', 'utils/runCollection', 'utils/numberFormat', 'utils/hardwareSummary',
+  'utils/perUserMetric', 'features/modelDetail/SummaryTable', 'features/modelDetail/TokenSpeedTable',
   'features/modelDetail/LatencyPercentileTable', 'features/modelDetail/RunDetailsTable',
-], (dom, section, selectField, emptyState, metricTrendChart, workspaceStore, runCollection, numberFormat, hardwareSummary,
-  summaryTable, tokenSpeedTable, latencyPercentileTable, runDetailsTable) => {
+], (dom, section, selectField, emptyState, metricTrendChart, perUserFormulaSelect, workspaceStore, perUserFormulaStore,
+  runCollection, numberFormat, hardwareSummary, perUserMetric, summaryTable, tokenSpeedTable, latencyPercentileTable,
+  runDetailsTable) => {
   'use strict';
 
   function profileLine(model) {
@@ -47,16 +48,16 @@ BenchPanel.define('features/modelDetail/ModelDetailView', [
       });
 
       return dom.h('div', { className: 'view-stack' },
-        dom.h('div', { className: 'filter-bar' }, picker),
+        dom.h('div', { className: 'filter-bar' }, picker, perUserFormulaSelect.PerUserFormulaSelect()),
         section.Section({ title: model.modelId, description: profileLine(model) },
           dom.h('div', { className: 'chart-grid' },
             metricTrendChart.MetricTrendChart({ models: [model], runs: allRuns, metricKey: 'outputThroughput' }),
-            metricTrendChart.MetricTrendChart({ models: [model], runs: allRuns, metricKey: 'tokensPerRequest' }))),
+            metricTrendChart.MetricTrendChart({ models: [model], runs: allRuns, metricKey: 'decodeTokensPerSecond' }))),
         section.Section({ title: 'Summary', description: 'Headline numbers at each concurrency level. Hover a column header for its meaning.' },
-          summaryTable.SummaryTable({ runs })),
+          summaryTable.SummaryTable({ runs, perUserKey: perUserMetric.metricKeyFor(perUserFormulaStore.getFormula()) })),
         section.Section({
           title: 'Token generation speed',
-          description: 'How fast each user sees text appear. Tokens/sec ≈ 1000 ÷ TPOT (ms).',
+          description: 'Decode speed: how fast each request generates once it has started. Decode tok/s = 1000 ÷ TPOT (ms).',
           footnote: 'Scaling efficiency is Output TPS ÷ (concurrency × Output TPS at the lowest level); 100% means throughput grew in step with load.',
         }, tokenSpeedTable.TokenSpeedTable({ runs })),
         section.Section({ title: 'Latency percentiles', description: 'P50 is the typical request; P95 and P99 show what the slowest users experience.' },
@@ -70,6 +71,7 @@ BenchPanel.define('features/modelDetail/ModelDetailView', [
     }
 
     render();
+    perUserFormulaStore.subscribe(render);
     return workspaceStore.subscribe(render);
   }
 

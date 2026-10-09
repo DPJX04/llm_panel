@@ -8,7 +8,7 @@ BenchPanel.define('features/dataManager/runsCsv', [
   'use strict';
 
   const HEADERS = [
-    'Model', 'Model ID', 'Label', 'Concurrency', 'Req/s', 'Output TPS', 'Total TPS', 'Tok/s per request',
+    'Model', 'Model ID', 'Label', 'Concurrency', 'Req/s', 'Output TPS', 'Total TPS', 'Decode tok/s', 'Per user tok/s (A)', 'Per user tok/s (B)',
     'Mean TTFT (ms)', 'P95 TTFT (ms)', 'Mean TPOT (ms)', 'P95 TPOT (ms)', 'Mean E2E (ms)', 'P95 E2E (ms)',
     'Scaling efficiency', 'Success rate', 'Prompts', 'Failed',
     'Avg input tokens', 'Avg output tokens', 'Duration (s)', 'Run date', 'Source file',
@@ -17,7 +17,7 @@ BenchPanel.define('features/dataManager/runsCsv', [
   ];
 
   const METRIC_KEYS = [
-    'requestThroughput', 'outputThroughput', 'totalTokenThroughput', 'tokensPerRequest',
+    'requestThroughput', 'outputThroughput', 'totalTokenThroughput', 'decodeTokensPerSecond', 'perUserTokensPerSecondA', 'perUserTokensPerSecondB',
     'meanTtftMs', 'p95TtftMs', 'meanTpotMs', 'p95TpotMs', 'meanE2eMs', 'p95E2eMs',
     'scalingEfficiency', 'successRate',
   ];

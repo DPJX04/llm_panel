@@ -56,8 +56,8 @@ BenchPanel.define('features/overview/highlights', [
     const tiles = [
       highlight('Highest throughput', metricEntries(models, runs, 'outputThroughput', levels.peak),
         { ...METRICS.outputThroughput, unit: 'tok/s' }, `Output tokens/s at concurrency ${peak}`),
-      highlight('Fastest per-user generation', metricEntries(models, runs, 'tokensPerRequest', levels.low),
-        METRICS.tokensPerRequest, `Tok/s per request at concurrency ${low}`),
+      highlight('Fastest per-user generation', metricEntries(models, runs, 'decodeTokensPerSecond', levels.low),
+        METRICS.decodeTokensPerSecond, `Decode tok/s at concurrency ${low}`),
       highlight('Fastest first token', metricEntries(models, runs, 'meanTtftMs', levels.low),
         METRICS.meanTtftMs, `Mean TTFT at concurrency ${low}`),
       highlight('Fastest full answer under load', metricEntries(models, runs, 'meanE2eMs', levels.peak),

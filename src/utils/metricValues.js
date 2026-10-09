@@ -1,13 +1,35 @@
 /*
- * Reads a metric from a run, including the derived ones.
+ * Reads a metric from a run, including the derived ones. Every formula the panel uses lives here.
  * The relative metric (scaling efficiency) compares a run with the same model's lowest-concurrency run.
  */
 BenchPanel.define('utils/metricValues', [], () => {
   'use strict';
 
-  /** Approximate tokens per second one request sees: 1000 ms ÷ mean time per output token. */
+  const MS_PER_S = 1000;
+
+  function isPositive(value) {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0;
+  }
+
+  /** Decode tok/s: 1000 ms ÷ mean time per output token. Speed while generating; leaves out TTFT and queue wait. */
   function tokensPerSecondFromTpot(tpotMs) {
-    return typeof tpotMs === 'number' && tpotMs > 0 ? 1000 / tpotMs : null;
+    return isPositive(tpotMs) ? MS_PER_S / tpotMs : null;
+  }
+
+  /** Per user tok/s, option A: the run's output TPS shared by its concurrent users. Null without max_concurrency. */
+  function sharedOutputTps(run) {
+    return isPositive(run.outputThroughput) && isPositive(run.concurrency) ? run.outputThroughput / run.concurrency : null;
+  }
+
+  /** Per user tok/s, option B: average output tokens per request ÷ full request time (E2E) in seconds. */
+  function tokensPerSecondFromE2e(run) {
+    if (!isPositive(run.totalOutputTokens) || !isPositive(run.completed) || !isPositive(run.e2el.mean)) return null;
+    return (run.totalOutputTokens / run.completed) / (run.e2el.mean / MS_PER_S);
+  }
+
+  /** True when option A cannot be used for this run (it has no max_concurrency), so option B stands in. */
+  function perUserFallsBackToE2e(run) {
+    return Boolean(run) && !isPositive(run.concurrency);
   }
 
   function successRate(run) {
@@ -18,7 +40,9 @@ BenchPanel.define('utils/metricValues', [], () => {
     requestThroughput: (run) => run.requestThroughput,
     outputThroughput: (run) => run.outputThroughput,
     totalTokenThroughput: (run) => run.totalTokenThroughput,
-    tokensPerRequest: (run) => tokensPerSecondFromTpot(run.tpot.mean),
+    decodeTokensPerSecond: (run) => tokensPerSecondFromTpot(run.tpot.mean),
+    perUserTokensPerSecondA: (run) => (perUserFallsBackToE2e(run) ? tokensPerSecondFromE2e(run) : sharedOutputTps(run)),
+    perUserTokensPerSecondB: tokensPerSecondFromE2e,
     meanTtftMs: (run) => run.ttft.mean,
     p95TtftMs: (run) => run.ttft.p95,
     meanTpotMs: (run) => run.tpot.mean,
@@ -52,5 +76,5 @@ BenchPanel.define('utils/metricValues', [], () => {
     throw new Error(`Unknown metric "${key}"`);
   }
 
-  return { tokensPerSecondFromTpot, getMetricValue };
+  return { tokensPerSecondFromTpot, sharedOutputTps, tokensPerSecondFromE2e, perUserFallsBackToE2e, getMetricValue };
 });

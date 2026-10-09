@@ -14,7 +14,7 @@ BenchPanel.define('features/overview/scorecard', [
     const peak = numberFormat.formatConcurrency(levels.peak);
     const all = [
       { metricKey: 'outputThroughput', level: levels.peak, label: `Output TPS @C${peak}` },
-      { metricKey: 'tokensPerRequest', level: levels.low, label: `Tok/s per request @C${low}` },
+      { metricKey: 'decodeTokensPerSecond', level: levels.low, label: `Decode tok/s @C${low}` },
       { metricKey: 'meanTtftMs', level: levels.low, label: `Mean TTFT @C${low}` },
       { metricKey: 'meanTtftMs', level: levels.peak, label: `Mean TTFT @C${peak}` },
       { metricKey: 'meanE2eMs', level: levels.peak, label: `Mean E2E @C${peak}` },

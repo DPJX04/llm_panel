@@ -61,13 +61,13 @@ BenchPanel.define('features/overview/OverviewView', [
           section.Section({ title: `Capacity at concurrency ${peak}`, description: 'Output tokens per second across all users. Higher is better.' },
             RankedBars(models, runs, 'outputThroughput', levels.peak)),
           section.Section({ title: `Single-user speed at concurrency ${low}`, description: 'Tokens per second one user sees (1000 ÷ TPOT). Higher is better.' },
-            RankedBars(models, runs, 'tokensPerRequest', levels.low))),
+            RankedBars(models, runs, 'decodeTokensPerSecond', levels.low))),
         section.Section({
           title: 'Throughput versus per-user speed',
           description: 'More users raise total throughput (left) but slow each user down (right). Hover a chart for exact values.',
         }, dom.h('div', { className: 'chart-grid' },
           metricTrendChart.MetricTrendChart({ models, runs, metricKey: 'outputThroughput' }),
-          metricTrendChart.MetricTrendChart({ models, runs, metricKey: 'tokensPerRequest' }))),
+          metricTrendChart.MetricTrendChart({ models, runs, metricKey: 'decodeTokensPerSecond' }))),
         section.Section({ title: 'Model overview' }, modelOverviewTable.ModelOverviewTable({ models, runs })));
     }
 

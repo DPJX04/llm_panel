@@ -1,7 +1,7 @@
 /* Builds a DataTable column for one catalogued metric, so every table formats and highlights it the same way. */
 BenchPanel.define('components/DataTable/metricColumn', [
-  'constants/metricCatalog', 'constants/rankingRules', 'utils/metricValues', 'utils/numberFormat',
-], (metricCatalog, rankingRules, metricValues, numberFormat) => {
+  'components/dom', 'constants/metricCatalog', 'constants/rankingRules', 'utils/metricValues', 'utils/perUserMetric', 'utils/numberFormat',
+], (dom, metricCatalog, rankingRules, metricValues, perUserMetric, numberFormat) => {
   'use strict';
 
   /**
@@ -20,7 +20,12 @@ BenchPanel.define('components/DataTable/metricColumn', [
       better: access.highlight === false ? undefined : metric.better,
       tieTolerance: metric.exact ? 0 : rankingRules.TIE_TOLERANCE,
       markWorst: Boolean(access.markWorst),
-      render: (row) => numberFormat.formatMetric(value(row), metric),
+      // A value worked out differently from its column (Per user tok/s option A using option B) says so on hover.
+      render: (row) => {
+        const text = numberFormat.formatMetric(value(row), metric);
+        const note = perUserMetric.valueNote(access.run(row), metricKey);
+        return note ? dom.h('span', { className: 'cell-note', title: note, text }) : text;
+      },
     };
   }
 

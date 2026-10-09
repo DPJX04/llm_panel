@@ -58,12 +58,13 @@ To share the panel itself as one file, run `bash scripts/build-single-file.sh`. 
 | Metric | Meaning | Better |
 |---|---|---|
 | Output TPS | Generated tokens per second across all users | higher |
-| Tok/s per request | What one user sees, **≈ 1000 ÷ mean TPOT (ms)** | higher |
+| Decode tok/s | Speed of a request while it generates, **1000 ÷ mean TPOT (ms)**; leaves out TTFT and queue wait | higher |
+| Per user tok/s | Speed one user really gets, including TTFT and queue wait. **Option A** (default): Output TPS ÷ max concurrency; a run without max concurrency uses option B and says so on hover. **Option B**: (output tokens ÷ completed requests) ÷ mean E2E (s). Pick the option with the "Per user tok/s" selector in Compare or Model detail; it applies everywhere and is remembered | higher |
 | TTFT | Time to first token (mean and P95) | lower |
 | E2E | End-to-end time for the full answer (mean and P95) | lower |
 | Success | Completed requests ÷ requests sent | higher |
 | Scaling efficiency | Output TPS ÷ (concurrency × Output TPS at the lowest level) | higher |
-| Req/s, Total TPS, TPOT | Model detail only: with a fixed output length they rank models exactly like Output TPS and tok/s per request | |
+| Req/s, Total TPS, TPOT | Model detail only: with a fixed output length they rank models exactly like Output TPS and Decode tok/s | |
 | TPS per GB | Output TPS at peak ÷ GPU memory used | higher |
 | Tokens per joule | Output TPS at peak ÷ GPU power (W) | higher |
 | KV cache size, tokens per GB | Tokens the KV cache holds, and per GB of KV cache memory | higher |
